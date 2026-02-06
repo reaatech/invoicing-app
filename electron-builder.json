@@ -27,7 +27,15 @@
     "icon": "public/icon.icns"
   },
   "win": {
-    "target": "nsis",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64",
+          "ia32"
+        ]
+      }
+    ],
     "icon": "public/icon.ico"
   },
   "linux": {
