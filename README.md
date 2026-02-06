@@ -26,20 +26,85 @@ A desktop application built with Electron, React, and TypeScript for managing pe
 
 ## Installation
 
-1. Clone the repository.
-2. Navigate to the project directory: `cd invoicing-app`.
-3. Install dependencies: `npm install`.
-4. Run the development server: `npm run dev`.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/reaatech/invoicing-app.git
+   cd invoicing-app
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+## Development
+
+### Running in Development Mode
+
+To run the application in development mode with hot-reload:
+
+1. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+
+2. In a separate terminal, start the Electron app:
+   ```bash
+   npm run dev:electron
+   ```
+
+The app will open automatically and reload when you make changes to the code.
 
 ## Building for Production
 
-To build the application for production, run:
+### Build the Application
+
+To build the Electron application for your platform:
+
+```bash
+npm run build:electron
+```
+
+This command will:
+1. Compile TypeScript files for Electron main process
+2. Build the React frontend with Vite
+3. Copy necessary files (migrations, templates)
+4. Package the application using electron-builder
+
+### Build Output
+
+The built application will be in the `release/` directory:
+
+- **macOS**: `release/mac-arm64/Invoicing App.app` (for Apple Silicon) or `release/mac-x64/` (for Intel)
+- **Windows**: `release/win-unpacked/` or `release/Invoicing App Setup.exe`
+- **Linux**: `release/linux-unpacked/` or `release/Invoicing App.AppImage`
+
+The `.dmg`, `.exe`, or `.AppImage` installers will also be generated in the `release/` directory.
+
+### Platform-Specific Builds
+
+To build for a specific platform:
+
+```bash
+# macOS only
+npm run build:electron -- --mac
+
+# Windows only
+npm run build:electron -- --win
+
+# Linux only
+npm run build:electron -- --linux
+```
+
+### Development Build Only
+
+To build just the web assets without packaging:
 
 ```bash
 npm run build
 ```
 
-The built application can be found in the `dist` folder.
+The output will be in the `dist/` directory.
 
 ## Usage
 
