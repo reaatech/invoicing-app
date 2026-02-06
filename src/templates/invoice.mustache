@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice {{invoice.number}}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      color: #333;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .logo {
+      max-height: 80px;
+      max-width: 200px;
+      object-fit: contain;
+    }
+    .company-info {
+      text-align: right;
+    }
+    .address {
+      white-space: pre-line;
+    }
+    .invoice-details {
+      margin: 20px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .customer-info {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .total {
+      font-weight: bold;
+      font-size: 1.2em;
+      text-align: right;
+    }
+    .notes {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    {{#company.logo}}
+    <img src="{{company.logo}}" alt="Company Logo" class="logo">
+    {{/company.logo}}
+    <div class="company-info">
+      <h3>{{company.name}}</h3>
+      <p class="address">{{company.address}}</p>
+      <p>Email: {{company.email}}</p>
+      <p>Phone: {{company.phone}}</p>
+    </div>
+  </div>
+
+  <div class="invoice-details">
+    <div>
+      <h2>Invoice #{{invoice.number}}</h2>
+      <p>Issue Date: {{invoice.issue_date}}</p>
+      <p>Due Date: {{invoice.due_date}}</p>
+      <p>Payment Terms: {{invoice.payment_terms}}</p>
+    </div>
+    <div class="customer-info">
+      <h3>Bill To:</h3>
+      <p>{{customer.name}}</p>
+      <p class="address">{{customer.billing_address}}</p>
+      <p>Email: {{customer.email}}</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Description</th>
+        <th>Unit Price</th>
+        <th>Quantity</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#line_items}}
+      <tr>
+        <td>{{product_name}}</td>
+        <td>{{description}}</td>
+        <td>{{unit_price_formatted}}</td>
+        <td>{{quantity}}</td>
+        <td>{{line_total_formatted}}</td>
+      </tr>
+      {{/line_items}}
+    </tbody>
+  </table>
+
+  <div class="total">
+    <p>Subtotal: {{subtotal_formatted}}</p>
+    <p>Total: {{total_formatted}}</p>
+  </div>
+
+  {{#invoice.notes}}
+  <div class="notes">
+    <h3>Notes:</h3>
+    <p>{{invoice.notes}}</p>
+  </div>
+  {{/invoice.notes}}
+
+</body>
+</html>
