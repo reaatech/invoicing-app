@@ -1,6 +1,10 @@
 # Invoicing App
 
-A desktop invoicing application built with Electron, React, and TypeScript for managing customers, products, and invoices with email delivery and PDF generation.
+A free desktop invoicing application built with Electron, React, and TypeScript for managing customers, products, and invoices with email delivery and PDF generation.
+
+This app was developed for contractors and freelancers who need a simple way to manage invoices without any fees.
+
+See the [release files](https://github.com/reaatech/invoicing-app/releases) for pre-built binaries for macOS (Apple Silicon) and Windows.
 
 ## Features
 
@@ -8,9 +12,9 @@ A desktop invoicing application built with Electron, React, and TypeScript for m
 - **Invoice Management**: Create, edit, duplicate, and manage invoices with line items
 - **Customer Management**: Full CRUD operations for customer records with contact details
 - **Product Management**: Manage product catalog with pricing and descriptions
-- **Invoice Attachments**: Attach files to invoices that are sent with email delivery
-- **Status Tracking**: Track invoice lifecycle (Draft, Sent, Paid, Overdue, Cancelled)
-- **Soft Delete**: Cancelled and deleted invoices are preserved for audit purposes
+- **Invoice Attachments**: Attach files to the email sent with the invoice delivery
+- **Status Tracking**: Track invoice lifecycle (Draft, Sent, Paid, Overdue, Canceled)
+- **Soft Delete**: Canceled and deleted invoices are preserved for audit purposes
 
 ### Automation & Communication
 - **Email Delivery**: Send invoices via SMTP with customizable templates
