@@ -68,5 +68,3 @@ export async function migrate() {
   runMigrations(migrations);
   console.log('All migrations completed.');
 }
-
-migrate();

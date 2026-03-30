@@ -16,21 +16,6 @@ const __dirname = path.dirname(__filename);
 console.log('Starting Electron app...');
 registerInvoiceSend();
 
-// Update overdue invoices and check backup reminder on app startup
-function updateOverdueInvoices() {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    db.prepare(`
-      UPDATE invoices 
-      SET status = 'Overdue' 
-      WHERE status = 'Sent' 
-      AND due_date < ?
-    `).run(today);
-  } catch (error) {
-    console.error('Error updating overdue invoices:', error);
-  }
-}
-
 // IPC listeners
 ipcMain.on('database-query', (event, query, params, requestId) => {
   try {

@@ -5,7 +5,7 @@ export function updateOverdueInvoices() {
   db.prepare(`
     UPDATE invoices 
     SET status = 'Overdue' 
-    WHERE status = 'Overdue' 
+    WHERE status = 'Sent' 
     AND due_date < ?
   `).run(today);
 }
