@@ -40,10 +40,10 @@ export const showSaveDialog = (options: { title?: string; defaultPath?: string; 
       return;
     }
     const handler = (response: unknown) => {
-      window.electronAPI.removeMessage('show-save-dialog-response', handler);
+      safeElectronAPI.removeMessage('show-save-dialog-response', handler);
       resolve(response as { success: boolean; canceled?: boolean; filePath?: string | null; error?: string });
     };
-    window.electronAPI.onMessage('show-save-dialog-response', handler);
-    window.electronAPI.sendMessage('show-save-dialog', options);
+    safeElectronAPI.onMessage('show-save-dialog-response', handler);
+    safeElectronAPI.sendMessage('show-save-dialog', options);
   });
 };

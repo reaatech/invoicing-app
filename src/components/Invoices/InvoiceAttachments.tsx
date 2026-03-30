@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, IconButton, List, ListItem, ListItemText, Paper, Typography } from '@mui/material';
 import { Paperclip, Trash2, Upload } from 'lucide-react';
 import { safeElectronAPI } from '../../utils/electron-api';
@@ -23,6 +23,7 @@ interface InvoiceAttachmentsProps {
 const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, readOnly = false }) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const isSelectingFiles = useRef(false);
 
   useEffect(() => {
     loadAttachments();
@@ -36,19 +37,22 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
   };
 
   const handleAddAttachment = () => {
+    if (isSelectingFiles.current) return;
+    isSelectingFiles.current = true;
+
+    const handleResponse = (response: any) => {
+      isSelectingFiles.current = false;
+      safeElectronAPI.removeMessage('show-open-dialog-response', handleResponse);
+      if (response.success && !response.canceled && response.filePaths && response.filePaths.length > 0) {
+        uploadFiles(response.filePaths);
+      }
+    };
+
+    safeElectronAPI.onMessage('show-open-dialog-response', handleResponse);
     safeElectronAPI.sendMessage('show-open-dialog', {
       title: 'Select files to attach',
       filters: []
     });
-
-    const handleResponse = (response: any) => {
-      if (response.success && !response.canceled && response.filePaths.length > 0) {
-        uploadFiles(response.filePaths);
-      }
-      safeElectronAPI.removeMessage('show-open-dialog-response', handleResponse);
-    };
-
-    safeElectronAPI.onMessage('show-open-dialog-response', handleResponse);
   };
 
   const uploadFiles = async (filePaths: string[]) => {
@@ -68,8 +72,6 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
 
   const uploadFile = (filePath: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      safeElectronAPI.sendMessage('upload-attachment', invoiceId, filePath);
-
       const handleResponse = (response: any) => {
         safeElectronAPI.removeMessage('upload-attachment-response', handleResponse);
         if (response.success) {
@@ -80,6 +82,7 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
       };
 
       safeElectronAPI.onMessage('upload-attachment-response', handleResponse);
+      safeElectronAPI.sendMessage('upload-attachment', invoiceId, filePath);
     });
   };
 
@@ -122,7 +125,7 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
             size="small"
             startIcon={<Upload className="h-4 w-4" />}
             onClick={handleAddAttachment}
-            disabled={isUploading}
+            disabled={isUploading || isSelectingFiles.current}
           >
             Add Files
           </Button>
