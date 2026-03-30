@@ -4,7 +4,7 @@ import { Box, Button, Chip, Paper, Table, TableBody, TableCell, TableHead, Table
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { api } from '../services/api';
 import { formatCurrency } from '../utils/currency';
-import { getStatusColor } from '../utils/invoice-status';
+import { getStatusCssColor } from '../utils/invoice-status';
 import '../types';
 
 const Home: React.FC = () => {
@@ -33,29 +33,33 @@ const Home: React.FC = () => {
   }, [dateRange]);
 
   const loadStats = async () => {
-    let query = `
-      SELECT 
-        COUNT(*) as totalInvoices,
-        SUM(total) as totalRevenue,
-        COUNT(CASE WHEN status IN ('Sent', 'Overdue') THEN 1 END) as outstandingInvoices,
-        SUM(CASE WHEN status IN ('Sent', 'Overdue') THEN total ELSE 0 END) as outstandingAmount
-      FROM invoices
-      WHERE deleted_at IS NULL AND status != 'Cancelled'
-    `;
-    let params: string[] = [];
-    if (dateRange.startDate && dateRange.endDate) {
-      query += ` AND issue_date >= ? AND issue_date <= ?`;
-      params = [dateRange.startDate, dateRange.endDate];
-    }
-    const response = await api.query(query, params);
-    if (response.success && response.data && response.data.length > 0) {
-      const data = response.data[0] as any;
-      setStats({
-        totalInvoices: data.totalInvoices || 0,
-        totalRevenue: data.totalRevenue || 0,
-        outstandingInvoices: data.outstandingInvoices || 0,
-        outstandingAmount: data.outstandingAmount || 0
-      });
+    try {
+      let query = `
+        SELECT 
+          COUNT(*) as totalInvoices,
+          SUM(total) as totalRevenue,
+          COUNT(CASE WHEN status IN ('Sent', 'Overdue') THEN 1 END) as outstandingInvoices,
+          SUM(CASE WHEN status IN ('Sent', 'Overdue') THEN total ELSE 0 END) as outstandingAmount
+        FROM invoices
+        WHERE deleted_at IS NULL AND status != 'Cancelled'
+      `;
+      let params: string[] = [];
+      if (dateRange.startDate && dateRange.endDate) {
+        query += ` AND issue_date >= ? AND issue_date <= ?`;
+        params = [dateRange.startDate, dateRange.endDate];
+      }
+      const response = await api.query(query, params);
+      if (response.success && response.data && response.data.length > 0) {
+        const data = response.data[0] as any;
+        setStats({
+          totalInvoices: data.totalInvoices || 0,
+          totalRevenue: data.totalRevenue || 0,
+          outstandingInvoices: data.outstandingInvoices || 0,
+          outstandingAmount: data.outstandingAmount || 0
+        });
+      }
+    } catch (error) {
+      console.error('[Home] Failed to load stats:', error);
     }
   };
 
@@ -69,85 +73,127 @@ const Home: React.FC = () => {
   };
 
   const loadRevenueHistory = async () => {
-    const query = `
-      SELECT 
-        strftime('%Y-%m', issue_date) as month,
-        SUM(total) as revenue,
-        COUNT(*) as count
-      FROM invoices
-      WHERE issue_date >= date('now', '-6 months')
-        AND deleted_at IS NULL
-        AND status != 'Cancelled'
-      GROUP BY strftime('%Y-%m', issue_date)
-      ORDER BY month
-    `;
-    const response = await api.query(query, []);
-    if (response.success && response.data) {
-      setRevenueHistory(response.data.map((d: any) => ({
-        month: d.month,
-        revenue: d.revenue || 0,
-        count: d.count || 0
-      })));
+    try {
+      let query = `
+        SELECT 
+          strftime('%Y-%m', issue_date) as month,
+          SUM(total) as revenue,
+          COUNT(*) as count
+        FROM invoices
+        WHERE deleted_at IS NULL
+          AND status != 'Cancelled'
+      `;
+      let params: string[] = [];
+      if (dateRange.startDate && dateRange.endDate) {
+        query += ` AND issue_date >= ? AND issue_date <= ?`;
+        params = [dateRange.startDate, dateRange.endDate];
+      } else {
+        query += ` AND issue_date >= date('now', '-6 months')`;
+      }
+      query += `
+        GROUP BY strftime('%Y-%m', issue_date)
+        ORDER BY month
+      `;
+      const response = await api.query(query, params);
+      if (response.success && response.data) {
+        setRevenueHistory(response.data.map((d: any) => ({
+          month: d.month,
+          revenue: d.revenue || 0,
+          count: d.count || 0
+        })));
+      }
+    } catch (error) {
+      console.error('[Home] Failed to load revenue history:', error);
     }
   };
 
   const loadStatusBreakdown = async () => {
-    const query = `
-      SELECT 
-        status,
-        COUNT(*) as count,
-        SUM(total) as total
-      FROM invoices
-      WHERE deleted_at IS NULL AND status != 'Cancelled'
-      GROUP BY status
-    `;
-    const response = await api.query(query, []);
-    if (response.success && response.data) {
-      setStatusBreakdown(response.data);
+    try {
+      let query = `
+        SELECT 
+          status,
+          COUNT(*) as count,
+          SUM(total) as total
+        FROM invoices
+        WHERE deleted_at IS NULL AND status != 'Cancelled'
+      `;
+      let params: string[] = [];
+      if (dateRange.startDate && dateRange.endDate) {
+        query += ` AND issue_date >= ? AND issue_date <= ?`;
+        params = [dateRange.startDate, dateRange.endDate];
+      }
+      query += ` GROUP BY status`;
+      const response = await api.query(query, params);
+      if (response.success && response.data) {
+        setStatusBreakdown(response.data);
+      }
+    } catch (error) {
+      console.error('[Home] Failed to load status breakdown:', error);
     }
   };
 
   const loadRecentInvoices = async () => {
-    const query = `
-      SELECT 
-        i.id,
-        i.invoice_number,
-        i.issue_date,
-        i.total,
-        i.status,
-        c.name as customer_name
-      FROM invoices i
-      LEFT JOIN customers c ON i.customer_id = c.id
-      WHERE i.deleted_at IS NULL AND i.status != 'Cancelled'
-      ORDER BY i.created_at DESC
-      LIMIT 5
-    `;
-    const response = await api.query(query, []);
-    if (response.success && response.data) {
-      setRecentInvoices(response.data);
+    try {
+      let query = `
+        SELECT 
+          i.id,
+          i.invoice_number,
+          i.issue_date,
+          i.total,
+          i.status,
+          c.name as customer_name
+        FROM invoices i
+        LEFT JOIN customers c ON i.customer_id = c.id
+        WHERE i.deleted_at IS NULL AND i.status != 'Cancelled'
+      `;
+      let params: string[] = [];
+      if (dateRange.startDate && dateRange.endDate) {
+        query += ` AND i.issue_date >= ? AND i.issue_date <= ?`;
+        params = [dateRange.startDate, dateRange.endDate];
+      }
+      query += `
+        ORDER BY i.created_at DESC
+        LIMIT 5
+      `;
+      const response = await api.query(query, params);
+      if (response.success && response.data) {
+        setRecentInvoices(response.data);
+      }
+    } catch (error) {
+      console.error('[Home] Failed to load recent invoices:', error);
     }
   };
 
   const loadMonthlyComparison = async () => {
-    const query = `
-      SELECT 
-        strftime('%Y-%m', issue_date) as month,
-        SUM(CASE WHEN status = 'Paid' THEN total ELSE 0 END) as paid,
-        SUM(CASE WHEN status IN ('Sent', 'Overdue') THEN total ELSE 0 END) as outstanding
-      FROM invoices
-      WHERE issue_date >= date('now', '-6 months')
-        AND deleted_at IS NULL
-        AND status != 'Cancelled'
-      GROUP BY strftime('%Y-%m', issue_date)
-      ORDER BY month
-    `;
-    const response = await api.query(query, []);
-    if (response.success && response.data) {
-      setMonthlyComparison(response.data);
+    try {
+      let query = `
+        SELECT 
+          strftime('%Y-%m', issue_date) as month,
+          SUM(CASE WHEN status = 'Paid' THEN total ELSE 0 END) as paid,
+          SUM(CASE WHEN status IN ('Sent', 'Overdue') THEN total ELSE 0 END) as outstanding
+        FROM invoices
+        WHERE deleted_at IS NULL
+          AND status != 'Cancelled'
+      `;
+      let params: string[] = [];
+      if (dateRange.startDate && dateRange.endDate) {
+        query += ` AND issue_date >= ? AND issue_date <= ?`;
+        params = [dateRange.startDate, dateRange.endDate];
+      } else {
+        query += ` AND issue_date >= date('now', '-6 months')`;
+      }
+      query += `
+        GROUP BY strftime('%Y-%m', issue_date)
+        ORDER BY month
+      `;
+      const response = await api.query(query, params);
+      if (response.success && response.data) {
+        setMonthlyComparison(response.data);
+      }
+    } catch (error) {
+      console.error('[Home] Failed to load monthly comparison:', error);
     }
   };
-
-  const COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
     <Box width="100%">
@@ -230,13 +276,15 @@ const Home: React.FC = () => {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="count"
+                nameKey="status"
                 label
               >
-                {statusBreakdown.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {statusBreakdown.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={getStatusCssColor(entry.status)} />
                 ))}
               </Pie>
               <Tooltip />
+              <Legend />
             </PieChart>
           </ResponsiveContainer>
         </Paper>
@@ -286,7 +334,7 @@ const Home: React.FC = () => {
                     <Chip 
                       label={invoice.status} 
                       size="small"
-                      sx={{ bgcolor: getStatusColor(invoice.status) }}
+                      sx={{ bgcolor: getStatusCssColor(invoice.status), color: '#fff' }}
                     />
                   </TableCell>
                 </TableRow>

@@ -75,12 +75,3 @@ export function showBackupReminder() {
   }
 }
 
-// Initialize app settings table if not exists
-export function initAppSettings() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS app_settings (
-      key TEXT PRIMARY KEY,
-      value TEXT
-    )
-  `);
-}
