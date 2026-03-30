@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
   Box,
@@ -21,16 +21,21 @@ interface CustomerFormProps {
 const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
   
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        handleDialogClose();
+        if (isDirtyRef.current && !window.confirm('You have unsaved changes. Are you sure you want to close?')) {
+          return;
+        }
+        onClose();
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isDirty]);
+  }, [onClose]);
   
   const [formData, setFormData] = useState({
     name: customer ? customer.name : '',

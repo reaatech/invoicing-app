@@ -20,6 +20,7 @@ import { formatCurrency } from '../../utils/currency';
 import InvoiceAttachments from './InvoiceAttachments';
 import toast from 'react-hot-toast';
 import { Paperclip, Trash2 } from 'lucide-react';
+import { isElectronAvailable, safeElectronAPI } from '../../utils/electron-api';
 import '../../types';
 
 interface InvoiceFormProps {
@@ -67,6 +68,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
   };
 
   useEffect(() => {
+    if (!isElectronAvailable()) return;
+
     // Single global handler that won't accumulate
     const globalFileHandler = (response: any) => {
       if (!isSelectingFiles.current) return; // Ignore if not actively selecting
@@ -79,46 +82,44 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       }
     };
 
-    window.electronAPI.onMessage('show-open-dialog-response', globalFileHandler);
+    safeElectronAPI.onMessage('show-open-dialog-response', globalFileHandler);
 
     return () => {
-      window.electronAPI.removeMessage('show-open-dialog-response', globalFileHandler);
+      safeElectronAPI.removeMessage('show-open-dialog-response', globalFileHandler);
     };
   }, []);
 
   useEffect(() => {
     const loadData = async () => {
-      const [customerResponse, productResponse] = await Promise.all([
-        api.query('SELECT id, name, email FROM customers', []),
-        api.query('SELECT id, name, description, unit_price FROM products', [])
-      ]);
-      if (customerResponse.success) {
-        setCustomers((customerResponse.data as { id: number; name: string; email?: string }[]) || []);
-      }
-      if (productResponse.success) {
-        setProducts((productResponse.data as { id: number; name: string; description: string; unit_price: number }[]) || []);
-      }
+      try {
+        const [customerResponse, productResponse] = await Promise.all([
+          api.query('SELECT id, name, email FROM customers', []),
+          api.query('SELECT id, name, description, unit_price FROM products', [])
+        ]);
+        if (customerResponse.success) {
+          setCustomers((customerResponse.data as { id: number; name: string; email?: string }[]) || []);
+        }
+        if (productResponse.success) {
+          setProducts((productResponse.data as { id: number; name: string; description: string; unit_price: number }[]) || []);
+        }
 
-      if (invoice) {
-        const lineItemResponse = await api.query(
-          'SELECT * FROM invoice_line_items WHERE invoice_id = ?',
-          [invoice.id]
-        );
-        if (lineItemResponse.success) {
-          setLineItems((lineItemResponse.data as { id: number; product_id?: string; product_name: string; description: string; unit_price: number; quantity: number; line_total: number }[]) || []);
+        if (invoice) {
+          const lineItemResponse = await api.query(
+            'SELECT * FROM invoice_line_items WHERE invoice_id = ?',
+            [invoice.id]
+          );
+          if (lineItemResponse.success) {
+            setLineItems((lineItemResponse.data as { id: number; product_id?: string; product_name: string; description: string; unit_price: number; quantity: number; line_total: number }[]) || []);
+          }
+        } else {
+          const invoiceNumberResponse = await api.getNextInvoiceNumber();
+          if (invoiceNumberResponse.success && invoiceNumberResponse.invoiceNumber) {
+            setFormData(prev => ({ ...prev, invoice_number: invoiceNumberResponse.invoiceNumber ?? '' }));
+          }
         }
-      } else {
-        const invoiceNumberResponse = await api.getNextInvoiceNumber();
-        if (invoiceNumberResponse.success && invoiceNumberResponse.invoiceNumber) {
-          setFormData(prev => ({ ...prev, invoice_number: invoiceNumberResponse.invoiceNumber ?? '' }));
-        }
-        const dueDaysResponse = await api.query('SELECT invoice_due_days FROM settings WHERE id = 1', []);
-        if (dueDaysResponse.success && dueDaysResponse.data?.length) {
-          const dueDays = (dueDaysResponse.data[0] as { invoice_due_days: number }).invoice_due_days || 30;
-          const issueDate = new Date(formData.issue_date);
-          issueDate.setDate(issueDate.getDate() + dueDays);
-          setFormData(prev => ({ ...prev, due_date: issueDate.toISOString().split('T')[0] }));
-        }
+      } catch (error) {
+        console.error('[InvoiceForm] Failed to load form data:', error);
+        toast.error('Failed to load form data');
       }
     };
 
@@ -126,7 +127,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       setFormData(prev => ({ ...prev, customer_id: String(initialCustomerId) }));
     }
     void loadData();
-  }, [formData.issue_date, invoice, initialCustomerId]);
+  }, [invoice, initialCustomerId]);
 
   useEffect(() => {
     if (invoice) {
@@ -249,7 +250,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
     if (isSelectingFiles.current) return;
     isSelectingFiles.current = true;
     
-    window.electronAPI.sendMessage('show-open-dialog', {
+    safeElectronAPI.sendMessage('show-open-dialog', {
       title: 'Select files to attach',
       filters: []
     });
@@ -267,7 +268,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
     const uploadPromises = pendingAttachments.map(filePath => {
       return new Promise<void>((resolve, reject) => {
         const handleResponse = (response: any) => {
-          window.electronAPI.removeMessage('upload-attachment-response', handleResponse);
+          safeElectronAPI.removeMessage('upload-attachment-response', handleResponse);
           if (response.success) {
             resolve();
           } else {
@@ -275,8 +276,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
           }
         };
 
-        window.electronAPI.onMessage('upload-attachment-response', handleResponse);
-        window.electronAPI.sendMessage('upload-attachment', invoiceId, filePath);
+        safeElectronAPI.onMessage('upload-attachment-response', handleResponse);
+        safeElectronAPI.sendMessage('upload-attachment', invoiceId, filePath);
       });
     });
 

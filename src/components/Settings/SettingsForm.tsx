@@ -11,7 +11,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { safeElectronAPI } from '../../utils/electron-api';
+import { api } from '../../services/api';
 import '../../types';
 
 const SettingsForm: React.FC = () => {
@@ -32,13 +32,12 @@ const SettingsForm: React.FC = () => {
   const [smtpSecure, setSmtpSecure] = useState(false);
 
   useEffect(() => {
-    const fetchSettings = () => {
+    const fetchSettings = async () => {
       setIsLoading(true);
-      safeElectronAPI.sendMessage('database-query', 'SELECT * FROM settings WHERE id=1', []);
-      const handleResponse = (response: any) => {
-        setIsLoading(false);
-        if (response.success && response.data.length > 0) {
-          const settings = response.data[0];
+      try {
+        const response = await api.query('SELECT * FROM settings WHERE id=1', []);
+        if (response.success && response.data && response.data.length > 0) {
+          const settings = response.data[0] as any;
           setCompanyName(settings.company_name || '');
           setCompanyAddress(settings.company_address || '');
           setCompanyEmail(settings.company_email || '');
@@ -51,49 +50,19 @@ const SettingsForm: React.FC = () => {
           setSmtpUser(settings.smtp_user || '');
           setSmtpPassword(settings.smtp_password || '');
           setSmtpSecure(settings.smtp_secure === 1);
-          return;
+        } else if (!response.success && response.error?.includes('no such table: settings')) {
+          // Table not created yet — use defaults (already set in state)
+        } else if (!response.success) {
+          toast.error('Failed to load settings');
         }
-        if (response.success) {
-          setCompanyName('');
-          setCompanyAddress('');
-          setCompanyEmail('');
-          setCompanyPhone('');
-          setLogoBase64('');
-          setInvoiceDueDays(30);
-          setInvoicePrefix('INV');
-          setSmtpHost('');
-          setSmtpPort(587);
-          setSmtpUser('');
-          setSmtpPassword('');
-          setSmtpSecure(false);
-          return;
-        }
-        if (response?.error?.includes('no such table: settings')) {
-          setCompanyName('');
-          setCompanyAddress('');
-          setCompanyEmail('');
-          setCompanyPhone('');
-          setLogoBase64('');
-          setInvoiceDueDays(30);
-          setInvoicePrefix('INV');
-          setSmtpHost('');
-          setSmtpPort(587);
-          setSmtpUser('');
-          setSmtpPassword('');
-          setSmtpSecure(false);
-          return;
-        }
+      } catch (error) {
+        console.error('[Settings] Failed to load settings:', error);
         toast.error('Failed to load settings');
-      };
-      safeElectronAPI.onMessage('database-response', handleResponse);
-      return () => {
-        safeElectronAPI.removeMessage('database-response', handleResponse);
-      };
+      } finally {
+        setIsLoading(false);
+      }
     };
-    const cleanup = fetchSettings();
-    return () => {
-      if (cleanup) cleanup();
-    };
+    void fetchSettings();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -155,16 +124,14 @@ const SettingsForm: React.FC = () => {
         smtp_secure: smtpSecure ? 1 : 0
       };
       
-      safeElectronAPI.sendMessage('settings-save', settings);
-      safeElectronAPI.onMessage('settings-response', (response: any) => {
-        setIsSaving(false);
-        if (response.success) {
-          toast.success('Settings saved successfully');
-          setIsDirty(false);
-        } else {
-          toast.error('Failed to save settings: ' + (response.error || 'Unknown error'));
-        }
-      });
+      const response = await api.saveSettings(settings);
+      setIsSaving(false);
+      if (response.success) {
+        toast.success('Settings saved successfully');
+        setIsDirty(false);
+      } else {
+        toast.error('Failed to save settings: ' + (response.error || 'Unknown error'));
+      }
     } catch (error) {
       setIsSaving(false);
       toast.error('An error occurred while saving settings');

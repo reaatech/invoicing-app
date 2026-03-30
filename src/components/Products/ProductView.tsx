@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -17,7 +18,7 @@ import { formatCurrency } from '../../utils/currency';
 import { api } from '../../services/api';
 import { TableSkeleton } from '../ui/SkeletonLoader';
 import { EmptyState } from '../ui/EmptyState';
-import { getStatusColor } from '../../utils/invoice-status';
+import { getStatusCssColor } from '../../utils/invoice-status';
 
 interface ProductRecord {
   id: number;
@@ -57,26 +58,33 @@ const ProductView: React.FC = () => {
       return;
     }
     setIsLoading(true);
-    const productResponse = await api.query('SELECT * FROM products WHERE id = ?', [productId]);
-    if (!productResponse.success || !productResponse.data?.length) {
+    try {
+      const productResponse = await api.query('SELECT * FROM products WHERE id = ?', [productId]);
+      if (!productResponse.success || !productResponse.data?.length) {
+        setProduct(null);
+        setInvoices([]);
+        return;
+      }
+      const productRecord = productResponse.data[0] as ProductRecord;
+      setProduct(productRecord);
+
+      const invoiceResponse = await api.query(
+        `SELECT DISTINCT invoices.*
+         FROM invoices
+         JOIN invoice_line_items ON invoice_line_items.invoice_id = invoices.id
+         WHERE invoice_line_items.product_id = ?
+         ORDER BY invoices.issue_date DESC`,
+        [productId]
+      );
+      setInvoices((invoiceResponse.success ? (invoiceResponse.data as InvoiceRecord[]) : []) || []);
+    } catch (error) {
+      console.error('[ProductView] Failed to load product:', error);
+      toast.error('Failed to load product data');
       setProduct(null);
       setInvoices([]);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    const productRecord = productResponse.data[0] as ProductRecord;
-    setProduct(productRecord);
-
-    const invoiceResponse = await api.query(
-      `SELECT DISTINCT invoices.*
-       FROM invoices
-       JOIN invoice_line_items ON invoice_line_items.invoice_id = invoices.id
-       WHERE invoice_line_items.product_id = ?
-       ORDER BY invoices.issue_date DESC`,
-      [productId]
-    );
-    setInvoices((invoiceResponse.success ? (invoiceResponse.data as InvoiceRecord[]) : []) || []);
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -90,6 +98,12 @@ const ProductView: React.FC = () => {
 
   const handleDeleteProduct = async () => {
     if (!product) {
+      return;
+    }
+    const lineItemCheck = await api.query('SELECT COUNT(*) as count FROM invoice_line_items WHERE product_id = ?', [product.id]);
+    const lineItemCount = lineItemCheck.success && lineItemCheck.data?.length ? (lineItemCheck.data[0] as any).count : 0;
+    if (lineItemCount > 0) {
+      alert(`Cannot delete this product: it is used in ${lineItemCount} invoice line item(s). Remove or update those line items first.`);
       return;
     }
     if (!window.confirm('Are you sure you want to delete this product?')) {
@@ -145,7 +159,7 @@ const ProductView: React.FC = () => {
       flex: 1,
       minWidth: 120,
       renderCell: (params) => (
-        <Chip label={params.value} className={`text-white ${getStatusColor(params.value)}`} size="small" />
+        <Chip label={params.value} sx={{ bgcolor: getStatusCssColor(params.value), color: '#fff' }} size="small" />
       )
     },
     {

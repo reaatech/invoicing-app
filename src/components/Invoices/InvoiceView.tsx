@@ -22,7 +22,7 @@ import { showSaveDialog } from '../../utils/electron-api';
 import toast from 'react-hot-toast';
 import { isElectronAvailable } from '../../utils/electron-api';
 import { formatCurrency } from '../../utils/currency';
-import { getStatusColor, canEditInvoice, canDeleteInvoice } from '../../utils/invoice-status';
+import { getStatusCssColor, canEditInvoice, canDeleteInvoice } from '../../utils/invoice-status';
 import { TableSkeleton } from '../ui/SkeletonLoader';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -89,31 +89,40 @@ const InvoiceView: React.FC = () => {
       return;
     }
     setIsLoading(true);
-    const invoiceResponse = await api.query('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL', [invoiceId]);
-    if (!invoiceResponse.success || !invoiceResponse.data?.length) {
+    try {
+      const invoiceResponse = await api.query('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL', [invoiceId]);
+      if (!invoiceResponse.success || !invoiceResponse.data?.length) {
+        setInvoice(null);
+        setCustomer(null);
+        setLineItems([]);
+        setEmailLogs([]);
+        return;
+      }
+
+      const invoiceRecord = invoiceResponse.data[0] as InvoiceRecord;
+      setInvoice(invoiceRecord);
+
+      const [customerResponse, lineItemResponse, emailLogResponse] = await Promise.all([
+        api.query('SELECT * FROM customers WHERE id = ?', [invoiceRecord.customer_id]),
+        api.query('SELECT * FROM invoice_line_items WHERE invoice_id = ? ORDER BY sort_order', [invoiceId]),
+        api.query('SELECT * FROM email_logs WHERE invoice_id = ? ORDER BY sent_at DESC', [invoiceId])
+      ]);
+
+      setCustomer((customerResponse.success && customerResponse.data?.length
+        ? (customerResponse.data[0] as CustomerRecord)
+        : null));
+      setLineItems((lineItemResponse.success ? (lineItemResponse.data as LineItemRecord[]) : []) || []);
+      setEmailLogs((emailLogResponse.success ? (emailLogResponse.data as EmailLogRecord[]) : []) || []);
+    } catch (error) {
+      console.error('[InvoiceView] Failed to load invoice:', error);
+      toast.error('Failed to load invoice data');
       setInvoice(null);
       setCustomer(null);
       setLineItems([]);
       setEmailLogs([]);
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    const invoiceRecord = invoiceResponse.data[0] as InvoiceRecord;
-    setInvoice(invoiceRecord);
-
-    const [customerResponse, lineItemResponse, emailLogResponse] = await Promise.all([
-      api.query('SELECT * FROM customers WHERE id = ?', [invoiceRecord.customer_id]),
-      api.query('SELECT * FROM invoice_line_items WHERE invoice_id = ? ORDER BY sort_order', [invoiceId]),
-      api.query('SELECT * FROM email_logs WHERE invoice_id = ? ORDER BY sent_at DESC', [invoiceId])
-    ]);
-
-    setCustomer((customerResponse.success && customerResponse.data?.length
-      ? (customerResponse.data[0] as CustomerRecord)
-      : null));
-    setLineItems((lineItemResponse.success ? (lineItemResponse.data as LineItemRecord[]) : []) || []);
-    setEmailLogs((emailLogResponse.success ? (emailLogResponse.data as EmailLogRecord[]) : []) || []);
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -297,7 +306,7 @@ const InvoiceView: React.FC = () => {
               Invoice {invoice.invoice_number}
             </Typography>
             <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-              <Chip label={invoice.status} className={`text-white ${getStatusColor(invoice.status)}`} size="small" />
+              <Chip label={invoice.status} sx={{ bgcolor: getStatusCssColor(invoice.status), color: '#fff' }} size="small" />
               <Typography variant="body2" color="text.secondary">Issued: {invoice.issue_date}</Typography>
               <Typography variant="body2" color="text.secondary">Due: {invoice.due_date}</Typography>
             </Box>
@@ -318,14 +327,20 @@ const InvoiceView: React.FC = () => {
               variant="outlined"
               startIcon={<Mail className="h-4 w-4" />}
               onClick={handleSendInvoice}
-              disabled={isSending}
+              disabled={isSending || ['Cancelled', 'Paid'].includes(invoice.status)}
             >
               {isSending ? 'Sending...' : (invoice.status === 'Draft' ? 'Send' : 'Resend')}
             </Button>
             <Button variant="outlined" startIcon={<Download className="h-4 w-4" />} onClick={handleDownloadPdf}>
               Download PDF
             </Button>
-            <Button variant="outlined" color="success" startIcon={<CheckCircle className="h-4 w-4" />} onClick={() => handleStatusUpdate('Paid', 'paid_at')}>
+            <Button
+              variant="outlined"
+              color="success"
+              startIcon={<CheckCircle className="h-4 w-4" />}
+              onClick={() => handleStatusUpdate('Paid', 'paid_at')}
+              disabled={!['Sent', 'Overdue'].includes(invoice.status)}
+            >
               Mark Paid
             </Button>
             <Button 

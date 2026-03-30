@@ -1,22 +1,6 @@
-// Export/Import functionality using proper async API calls
-
-export async function exportData(): Promise<{ success: boolean; data?: string; error?: string }> {
-  return new Promise((resolve) => {
-    window.electronAPI.sendMessage('export-data');
-    window.electronAPI.onMessage('export-response', (response: unknown) => {
-      resolve(response as { success: boolean; data?: string; error?: string });
-    });
-  });
-}
-
-export async function importData(jsonData: string): Promise<{ success: boolean; error?: string }> {
-  return new Promise((resolve) => {
-    window.electronAPI.sendMessage('import-data', jsonData);
-    window.electronAPI.onMessage('import-response', (response: unknown) => {
-      resolve(response as { success: boolean; error?: string });
-    });
-  });
-}
+// Export/Import utility functions
+// NOTE: For IPC-based export/import, use api.exportData() and api.importData() from services/api.ts
+// which have proper timeout handling and listener cleanup.
 
 // Helper function to download exported data as JSON file
 export function downloadExportedData(jsonData: string, filename: string = 'invoicing-data-export.json') {

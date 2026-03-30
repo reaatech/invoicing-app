@@ -11,6 +11,7 @@ import ProductView from './components/Products/ProductView'
 import InvoiceList from './components/Invoices/InvoiceList'
 import InvoiceView from './components/Invoices/InvoiceView'
 import Home from './components/Home'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 import './App.css'
 import appLogo from './assets/react.svg'
 import { useState, useEffect } from 'react'
@@ -113,6 +114,7 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <HashRouter>
@@ -159,6 +161,7 @@ function App() {
         </Box>
       </HashRouter>
     </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 
