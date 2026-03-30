@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, FileText, Search, MoreVertical, Send, Eye, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Search, MoreVertical, Send, Eye, XCircle, CheckCircle } from 'lucide-react';
 import { Box, Button, Chip, IconButton, InputAdornment, Menu, MenuItem, Paper, TextField, Typography } from '@mui/material';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/currency';
@@ -13,7 +13,7 @@ import { TableSkeleton } from '../ui/SkeletonLoader';
 import { api } from '../../services/api';
 import { isElectronAvailable } from '../../utils/electron-api';
 import '../../types';
-import { getStatusColor, canEditInvoice, canDeleteInvoice } from '../../utils/invoice-status';
+import { getStatusCssColor, canEditInvoice, canDeleteInvoice } from '../../utils/invoice-status';
 
 const InvoiceList: React.FC = () => {
   const [invoices, setInvoices] = useState<{ [key: string]: string | number }[]>([]);
@@ -51,17 +51,27 @@ const InvoiceList: React.FC = () => {
   }, [location.search]);
 
   const loadInvoices = async () => {
-    const response = await api.query('SELECT * FROM invoices WHERE deleted_at IS NULL', []);
-    if (response.success) {
-      setInvoices((response.data as any[]) || []);
+    try {
+      const response = await api.query('SELECT * FROM invoices WHERE deleted_at IS NULL', []);
+      if (response.success) {
+        setInvoices((response.data as any[]) || []);
+      }
+    } catch (error) {
+      console.error('[Invoices] Failed to load invoices:', error);
+      toast.error('Failed to load invoices');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const loadCustomers = async () => {
-    const response = await api.query('SELECT id, name, email FROM customers', []);
-    if (response.success) {
-      setCustomers((response.data as { id: number; name: string; email?: string }[]) || []);
+    try {
+      const response = await api.query('SELECT id, name, email FROM customers', []);
+      if (response.success) {
+        setCustomers((response.data as { id: number; name: string; email?: string }[]) || []);
+      }
+    } catch (error) {
+      console.error('[Invoices] Failed to load customers:', error);
     }
   };
 
@@ -110,11 +120,11 @@ const InvoiceList: React.FC = () => {
   };
 
   const handleViewInvoice = (invoiceId: number) => {
-    window.location.hash = `#/invoices/${invoiceId}`;
+    navigate(`/invoices/${invoiceId}`);
   };
 
   const handleViewCustomer = (customerId: number | string) => {
-    window.location.hash = `#/customers/${Number(customerId)}`;
+    navigate(`/customers/${Number(customerId)}`);
   };
 
   const handleEditInvoice = (invoice: { [key: string]: string | number }) => {
@@ -258,7 +268,7 @@ const InvoiceList: React.FC = () => {
       <Box sx={{ overflow: 'hidden', borderRadius: 2, border: 1, borderColor: 'divider' }}>
         {isLoading ? (
           <TableSkeleton rows={5} />
-        ) : (
+        ) : filteredInvoices.length > 0 ? (
           <Box sx={{ width: '100%' }}>
             <DataGrid
               rows={filteredInvoices.map(invoice => ({
@@ -323,7 +333,7 @@ const InvoiceList: React.FC = () => {
                     <Chip
                       label={String(params.value)}
                       size="small"
-                      className={`text-white ${getStatusColor(String(params.value))}`}
+                      sx={{ bgcolor: getStatusCssColor(String(params.value)), color: '#fff' }}
                     />
                   )
                 },
@@ -355,7 +365,7 @@ const InvoiceList: React.FC = () => {
               pageSizeOptions={[10, 25, 50]}
             />
           </Box>
-        )}
+        ) : null}
       </Box>
       <Menu
         anchorEl={menuAnchorEl}
@@ -386,7 +396,7 @@ const InvoiceList: React.FC = () => {
           <Edit className="h-4 w-4 mr-2" />
           Edit
         </MenuItem>
-        {String(invoices.find(item => Number(item.id) === Number(menuInvoiceId))?.status) === 'Draft' && (
+        {['Draft', 'Sent', 'Overdue'].includes(String(invoices.find(item => Number(item.id) === Number(menuInvoiceId))?.status)) && (
           <MenuItem
             onClick={() => {
               const invoice = invoices.find(item => Number(item.id) === Number(menuInvoiceId));
@@ -398,7 +408,30 @@ const InvoiceList: React.FC = () => {
             disabled={sendingInvoiceId === Number(menuInvoiceId)}
           >
             <Send className="h-4 w-4 mr-2" />
-            {sendingInvoiceId === Number(menuInvoiceId) ? 'Sending...' : 'Send'}
+            {sendingInvoiceId === Number(menuInvoiceId) ? 'Sending...' : (String(invoices.find(item => Number(item.id) === Number(menuInvoiceId))?.status) === 'Draft' ? 'Send' : 'Resend')}
+          </MenuItem>
+        )}
+        {['Sent', 'Overdue'].includes(String(invoices.find(item => Number(item.id) === Number(menuInvoiceId))?.status)) && (
+          <MenuItem
+            onClick={() => {
+              const invoice = invoices.find(item => Number(item.id) === Number(menuInvoiceId));
+              if (invoice) {
+                api.query("UPDATE invoices SET status = 'Paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", [invoice.id])
+                  .then((response) => {
+                    if (response.success) {
+                      toast.success('Invoice marked as paid');
+                      loadInvoices();
+                    } else {
+                      toast.error('Failed to mark invoice as paid: ' + (response.error || 'Unknown error'));
+                    }
+                  })
+                  .catch(() => toast.error('Failed to mark invoice as paid'));
+              }
+              handleMenuClose();
+            }}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Mark as Paid
           </MenuItem>
         )}
         <MenuItem
@@ -429,7 +462,7 @@ const InvoiceList: React.FC = () => {
           Delete
         </MenuItem>
       </Menu>
-      {filteredInvoices.length === 0 && (
+      {filteredInvoices.length === 0 && !isLoading && (
         (searchTerm || statusFilter !== 'all' || dateRange.startDate || dateRange.endDate) ? (
           <EmptyState
             icon={Search}

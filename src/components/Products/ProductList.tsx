@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Package, Search, MoreVertical, Eye } from 'lucide-react';
 import { Box, Button, IconButton, InputAdornment, Menu, MenuItem, Paper, TextField } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
@@ -11,6 +12,7 @@ import { formatCurrency } from '../../utils/currency';
 import '../../types';
 
 const ProductList: React.FC = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,10 +27,15 @@ const ProductList: React.FC = () => {
 
   const loadProducts = async () => {
     setIsLoading(true);
-    const response = await api.query('SELECT * FROM products', []);
-    setIsLoading(false);
-    if (response.success) {
-      setProducts((response.data as any[]) || []);
+    try {
+      const response = await api.query('SELECT * FROM products', []);
+      if (response.success) {
+        setProducts((response.data as any[]) || []);
+      }
+    } catch (error) {
+      console.error('[Products] Failed to load products:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,13 +59,18 @@ const ProductList: React.FC = () => {
     (product.description ?? '').toLowerCase().includes(normalizedSearch)
   );
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
+    const lineItemCheck = await api.query('SELECT COUNT(*) as count FROM invoice_line_items WHERE product_id = ?', [id]);
+    const lineItemCount = lineItemCheck.success && lineItemCheck.data?.length ? (lineItemCheck.data[0] as any).count : 0;
+    if (lineItemCount > 0) {
+      alert(`Cannot delete this product: it is used in ${lineItemCount} invoice line item(s). Remove or update those line items first.`);
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this product?')) {
-      api.query('DELETE FROM products WHERE id = ?', [id]).then(response => {
-        if (response.success) {
-          setProducts(products.filter(p => p.id !== id));
-        }
-      });
+      const response = await api.query('DELETE FROM products WHERE id = ?', [id]);
+      if (response.success) {
+        setProducts(products.filter(p => p.id !== id));
+      }
     }
   };
 
@@ -73,7 +85,7 @@ const ProductList: React.FC = () => {
   };
 
   const handleViewProduct = (productId: number) => {
-    window.location.hash = `#/products/${productId}`;
+    navigate(`/products/${productId}`);
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, productId: number) => {
@@ -115,7 +127,7 @@ const ProductList: React.FC = () => {
       <Box sx={{ overflow: 'hidden', borderRadius: 2, border: 1, borderColor: 'divider' }}>
         {isLoading ? (
           <TableSkeleton rows={5} />
-        ) : (
+        ) : filteredProducts.length > 0 ? (
           <Box sx={{ width: '100%' }}>
             <DataGrid
               rows={filteredProducts.map(product => ({
@@ -168,9 +180,9 @@ const ProductList: React.FC = () => {
               }}
             />
           </Box>
-        )}
+        ) : null}
       </Box>
-      {filteredProducts.length === 0 && (
+      {filteredProducts.length === 0 && !isLoading && (
         searchTerm ? (
           <EmptyState
             icon={Search}

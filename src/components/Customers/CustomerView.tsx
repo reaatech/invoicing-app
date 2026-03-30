@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -21,7 +22,7 @@ import { TableSkeleton } from '../ui/SkeletonLoader';
 import { EmptyState } from '../ui/EmptyState';
 import { calculateCustomerAnalytics } from '../../utils/analytics';
 import { downloadExportedData } from '../../utils/export';
-import { getStatusColor } from '../../utils/invoice-status';
+import { getStatusCssColor } from '../../utils/invoice-status';
 
 interface CustomerRecord {
   id: number;
@@ -65,21 +66,28 @@ const CustomerView: React.FC = () => {
       return;
     }
     setIsLoading(true);
-    const customerResponse = await api.query('SELECT * FROM customers WHERE id = ?', [customerId]);
-    if (!customerResponse.success || !customerResponse.data?.length) {
+    try {
+      const customerResponse = await api.query('SELECT * FROM customers WHERE id = ?', [customerId]);
+      if (!customerResponse.success || !customerResponse.data?.length) {
+        setCustomer(null);
+        setInvoices([]);
+        return;
+      }
+      const customerRecord = customerResponse.data[0] as CustomerRecord;
+      setCustomer(customerRecord);
+      const invoiceResponse = await api.query(
+        'SELECT * FROM invoices WHERE customer_id = ? ORDER BY issue_date DESC',
+        [customerId]
+      );
+      setInvoices((invoiceResponse.success ? (invoiceResponse.data as InvoiceRecord[]) : []) || []);
+    } catch (error) {
+      console.error('[CustomerView] Failed to load customer:', error);
+      toast.error('Failed to load customer data');
       setCustomer(null);
       setInvoices([]);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    const customerRecord = customerResponse.data[0] as CustomerRecord;
-    setCustomer(customerRecord);
-    const invoiceResponse = await api.query(
-      'SELECT * FROM invoices WHERE customer_id = ? ORDER BY issue_date DESC',
-      [customerId]
-    );
-    setInvoices((invoiceResponse.success ? (invoiceResponse.data as InvoiceRecord[]) : []) || []);
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -93,6 +101,12 @@ const CustomerView: React.FC = () => {
 
   const handleDeleteCustomer = async () => {
     if (!customer) {
+      return;
+    }
+    const invoiceCheck = await api.query('SELECT COUNT(*) as count FROM invoices WHERE customer_id = ?', [customer.id]);
+    const invoiceCount = invoiceCheck.success && invoiceCheck.data?.length ? (invoiceCheck.data[0] as any).count : 0;
+    if (invoiceCount > 0) {
+      alert(`Cannot delete this customer: ${invoiceCount} invoice(s) are associated with them. Delete or reassign the invoices first.`);
       return;
     }
     if (!window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
@@ -159,7 +173,7 @@ const CustomerView: React.FC = () => {
       flex: 1,
       minWidth: 120,
       renderCell: (params) => (
-        <Chip label={params.value} className={`text-white ${getStatusColor(params.value)}`} size="small" />
+        <Chip label={params.value} sx={{ bgcolor: getStatusCssColor(params.value), color: '#fff' }} size="small" />
       )
     },
     {
@@ -270,7 +284,7 @@ const CustomerView: React.FC = () => {
             <Typography variant="subtitle1" fontWeight={600} mb={2}>Invoices</Typography>
             <Box display="flex" gap={2} mb={2} flexWrap="wrap">
               {Object.entries(analytics.statusCounts).map(([status, count]) => (
-                <Chip key={status} label={`${status}: ${count}`} />
+                <Chip key={status} label={`${status}: ${count}`} sx={{ bgcolor: getStatusCssColor(status), color: '#fff' }} />
               ))}
             </Box>
             <Box sx={{ height: 420 }}>

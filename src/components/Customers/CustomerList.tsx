@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Users, Search, Eye, MoreVertical } from 'lucide-react';
 import { Box, Button, IconButton, InputAdornment, Menu, MenuItem, Paper, TextField } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
@@ -10,6 +11,7 @@ import { api } from '../../services/api';
 import '../../types';
 
 const CustomerList: React.FC = () => {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<{ [key: string]: string | number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,10 +26,15 @@ const CustomerList: React.FC = () => {
 
   const loadCustomers = async () => {
     setIsLoading(true);
-    const response = await api.query('SELECT * FROM customers', []);
-    setIsLoading(false);
-    if (response.success) {
-      setCustomers((response.data as { [key: string]: string | number }[]) || []);
+    try {
+      const response = await api.query('SELECT * FROM customers', []);
+      if (response.success) {
+        setCustomers((response.data as { [key: string]: string | number }[]) || []);
+      }
+    } catch (error) {
+      console.error('[Customers] Failed to load customers:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,15 +57,20 @@ const CustomerList: React.FC = () => {
            String(customer.email).toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
+    const invoiceCheck = await api.query('SELECT COUNT(*) as count FROM invoices WHERE customer_id = ?', [id]);
+    const invoiceCount = invoiceCheck.success && invoiceCheck.data?.length ? (invoiceCheck.data[0] as any).count : 0;
+    if (invoiceCount > 0) {
+      alert(`Cannot delete this customer: ${invoiceCount} invoice(s) are associated with them. Delete or reassign the invoices first.`);
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
-      api.query('DELETE FROM customers WHERE id = ?', [id]).then(response => {
-        if (response.success) {
-          setCustomers(customers.filter(c => c.id !== id));
-        } else {
-          alert('Cannot delete customer: ' + (response.error || 'Unknown error'));
-        }
-      });
+      const response = await api.query('DELETE FROM customers WHERE id = ?', [id]);
+      if (response.success) {
+        setCustomers(customers.filter(c => c.id !== id));
+      } else {
+        alert('Cannot delete customer: ' + (response.error || 'Unknown error'));
+      }
     }
   };
 
@@ -73,7 +85,7 @@ const CustomerList: React.FC = () => {
   };
 
   const handleViewCustomer = (customerId: number) => {
-    window.location.hash = `#/customers/${customerId}`;
+    navigate(`/customers/${customerId}`);
   };
 
   const handleCloseForm = () => {
@@ -133,7 +145,7 @@ const CustomerList: React.FC = () => {
       <Box sx={{ overflow: 'hidden', borderRadius: 2, border: 1, borderColor: 'divider' }}>
         {isLoading ? (
           <TableSkeleton rows={5} />
-        ) : (
+        ) : filteredCustomers.length > 0 ? (
           <Box sx={{ width: '100%' }}>
             <DataGrid
               rows={filteredCustomers.map(customer => ({
@@ -186,9 +198,9 @@ const CustomerList: React.FC = () => {
               }}
             />
           </Box>
-        )}
+        ) : null}
       </Box>
-      {filteredCustomers.length === 0 && (
+      {filteredCustomers.length === 0 && !isLoading && (
         searchTerm ? (
           <EmptyState
             icon={Search}
