@@ -1,21 +1,15 @@
 import { FileEdit, Send, CheckCircle, AlertCircle, XCircle, type LucideIcon } from 'lucide-react';
 
-export function getStatusColor(status: string): string {
+export const getStatusCssColor = (status: string): string => {
   switch (status) {
-    case 'Draft':
-      return 'bg-gray-500';
-    case 'Sent':
-      return 'bg-blue-500';
-    case 'Paid':
-      return 'bg-green-500';
-    case 'Overdue':
-      return 'bg-red-500';
-    case 'Cancelled':
-      return 'bg-black';
-    default:
-      return 'bg-gray-500';
+    case 'Draft': return '#6b7280';
+    case 'Sent': return '#2563eb';
+    case 'Paid': return '#16a34a';
+    case 'Overdue': return '#ef4444';
+    case 'Cancelled': return '#9ca3af';
+    default: return '#6b7280';
   }
-}
+};
 
 export function getStatusIcon(status: string): LucideIcon {
   switch (status) {
