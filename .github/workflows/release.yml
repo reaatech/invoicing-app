@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'package-lock.json'
+  workflow_dispatch:
 
 # Needed so the default GITHUB_TOKEN can push the version-bump
 # commit and tag back to the repo. No secret configuration required.
