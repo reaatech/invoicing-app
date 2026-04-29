@@ -7,3 +7,5 @@ release
 *.log
 pnpm-lock.yaml
 package-lock.json
+coverage
+
