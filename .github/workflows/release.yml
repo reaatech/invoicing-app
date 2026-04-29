@@ -1,20 +1,19 @@
 name: Release
 
-# Triggers on push to main, but only when package-lock.json changed.
-# This means only dependency bumps (e.g. Dependabot PRs) cut releases.
 on:
   push:
     branches: [main]
     paths:
       - 'package-lock.json'
 
+# Needed so the default GITHUB_TOKEN can push the version-bump
+# commit and tag back to the repo. No secret configuration required.
 permissions:
   contents: write
-  actions: write
 
 jobs:
   bump:
-    name: Bump version & tag
+    name: Bump version
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.bump.outputs.tag }}
@@ -30,9 +29,8 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
 
-          # Idempotent: skip if tag already exists (e.g. re-run)
           if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists — nothing to bump."
+            echo "Tag v$VERSION already exists."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -58,7 +56,7 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build & publish (${{ matrix.os }})
+    name: Build ${{ matrix.os }}
     needs: bump
     if: needs.bump.outputs.tag != '' && needs.bump.outputs.skip != 'true'
     strategy:
@@ -95,4 +93,4 @@ jobs:
 
       - run: npx electron-builder --publish always
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
