@@ -94,7 +94,7 @@ jobs:
 
       - name: Build and publish
         run: |
-          ulimit -n 4096
+          ulimit -S -n 10240
           npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ github.token }}
