@@ -329,7 +329,7 @@ const Home: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value: number | undefined) => formatCurrency(value ?? 0)} />
+              <Tooltip formatter={(value: unknown) => formatCurrency(Number(value ?? 0))} />
               <Legend />
               <Line
                 type="monotone"
@@ -378,7 +378,7 @@ const Home: React.FC = () => {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
-            <Tooltip formatter={(value: number | undefined) => formatCurrency(value ?? 0)} />
+            <Tooltip formatter={(value: unknown) => formatCurrency(Number(value ?? 0))} />
             <Legend />
             <Bar dataKey="paid" fill="#16a34a" name="Paid" />
             <Bar dataKey="outstanding" fill="#f59e0b" name="Outstanding" />
