@@ -8,15 +8,9 @@ interface ThemeSwitcherProps {
 }
 
 const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ darkMode, onToggle }) => {
-
   return (
     <Tooltip title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-      <IconButton
-        onClick={onToggle}
-        color="inherit"
-        aria-label="Toggle dark mode"
-        size="small"
-      >
+      <IconButton onClick={onToggle} color="inherit" aria-label="Toggle dark mode" size="small">
         {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </IconButton>
     </Tooltip>

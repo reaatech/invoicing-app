@@ -1,10 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Chip, Paper, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  Box,
+  Button,
+  Chip,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { api } from '../services/api';
 import { formatCurrency } from '../utils/currency';
 import { getStatusCssColor } from '../utils/invoice-status';
+import type { DbRow } from '../types';
 import '../types';
 
 const Home: React.FC = () => {
@@ -13,24 +40,25 @@ const Home: React.FC = () => {
     totalInvoices: 0,
     totalRevenue: 0,
     outstandingInvoices: 0,
-    outstandingAmount: 0
+    outstandingAmount: 0,
   });
-  const [revenueHistory, setRevenueHistory] = useState<any[]>([]);
-  const [statusBreakdown, setStatusBreakdown] = useState<any[]>([]);
-  const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
-  const [monthlyComparison, setMonthlyComparison] = useState<any[]>([]);
+  const [revenueHistory, setRevenueHistory] = useState<DbRow[]>([]);
+  const [statusBreakdown, setStatusBreakdown] = useState<DbRow[]>([]);
+  const [recentInvoices, setRecentInvoices] = useState<DbRow[]>([]);
+  const [monthlyComparison, setMonthlyComparison] = useState<DbRow[]>([]);
   const [dateRange, setDateRange] = useState({
     startDate: '',
-    endDate: ''
+    endDate: '',
   });
 
-  useEffect(() => {
-    loadStats();
-    loadRevenueHistory();
-    loadStatusBreakdown();
-    loadRecentInvoices();
-    loadMonthlyComparison();
-  }, [dateRange]);
+  const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDateRange((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const clearDateFilter = () => {
+    setDateRange({ startDate: '', endDate: '' });
+  };
 
   const loadStats = async () => {
     try {
@@ -50,26 +78,17 @@ const Home: React.FC = () => {
       }
       const response = await api.query(query, params);
       if (response.success && response.data && response.data.length > 0) {
-        const data = response.data[0] as any;
+        const data = response.data[0] as Record<string, number>;
         setStats({
           totalInvoices: data.totalInvoices || 0,
           totalRevenue: data.totalRevenue || 0,
           outstandingInvoices: data.outstandingInvoices || 0,
-          outstandingAmount: data.outstandingAmount || 0
+          outstandingAmount: data.outstandingAmount || 0,
         });
       }
     } catch (error) {
       console.error('[Home] Failed to load stats:', error);
     }
-  };
-
-  const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setDateRange(prev => ({ ...prev, [name]: value }));
-  };
-
-  const clearDateFilter = () => {
-    setDateRange({ startDate: '', endDate: '' });
   };
 
   const loadRevenueHistory = async () => {
@@ -96,11 +115,16 @@ const Home: React.FC = () => {
       `;
       const response = await api.query(query, params);
       if (response.success && response.data) {
-        setRevenueHistory(response.data.map((d: any) => ({
-          month: d.month,
-          revenue: d.revenue || 0,
-          count: d.count || 0
-        })));
+        setRevenueHistory(
+          response.data.map((d: unknown) => {
+            const item = d as Record<string, unknown>;
+            return {
+              month: item.month,
+              revenue: (item.revenue as number) || 0,
+              count: (item.count as number) || 0,
+            };
+          }),
+        );
       }
     } catch (error) {
       console.error('[Home] Failed to load revenue history:', error);
@@ -125,7 +149,7 @@ const Home: React.FC = () => {
       query += ` GROUP BY status`;
       const response = await api.query(query, params);
       if (response.success && response.data) {
-        setStatusBreakdown(response.data);
+        setStatusBreakdown(response.data as DbRow[]);
       }
     } catch (error) {
       console.error('[Home] Failed to load status breakdown:', error);
@@ -157,7 +181,7 @@ const Home: React.FC = () => {
       `;
       const response = await api.query(query, params);
       if (response.success && response.data) {
-        setRecentInvoices(response.data);
+        setRecentInvoices(response.data as DbRow[]);
       }
     } catch (error) {
       console.error('[Home] Failed to load recent invoices:', error);
@@ -188,27 +212,54 @@ const Home: React.FC = () => {
       `;
       const response = await api.query(query, params);
       if (response.success && response.data) {
-        setMonthlyComparison(response.data);
+        setMonthlyComparison(response.data as DbRow[]);
       }
     } catch (error) {
       console.error('[Home] Failed to load monthly comparison:', error);
     }
   };
 
+  useEffect(() => {
+    void loadStats();
+    void loadRevenueHistory();
+    void loadStatusBreakdown();
+    void loadRecentInvoices();
+    void loadMonthlyComparison();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange]);
+
   return (
     <Box width="100%">
-      <Typography variant="h5" fontWeight={600} mb={2}>Dashboard</Typography>
+      <Typography variant="h5" fontWeight={600} mb={2}>
+        Dashboard
+      </Typography>
       <Paper sx={{ p: 2.5, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Quick Actions</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>
+          Quick Actions
+        </Typography>
         <Box display="flex" flexWrap="wrap" gap={2}>
-          <Button variant="contained" onClick={() => navigate('/invoices')}>Create New Invoice</Button>
-          <Button variant="contained" color="success" onClick={() => navigate('/customers')}>Add Customer</Button>
-          <Button variant="contained" color="warning" onClick={() => navigate('/products')}>Add Product</Button>
+          <Button variant="contained" onClick={() => navigate('/invoices')}>
+            Create New Invoice
+          </Button>
+          <Button variant="contained" color="success" onClick={() => navigate('/customers')}>
+            Add Customer
+          </Button>
+          <Button variant="contained" color="warning" onClick={() => navigate('/products')}>
+            Add Product
+          </Button>
         </Box>
       </Paper>
       <Paper sx={{ p: 2.5, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }} flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
-          <Typography variant="subtitle1" fontWeight={600}>Filter by Date Range</Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', md: 'center' }}
+          flexDirection={{ xs: 'column', md: 'row' }}
+          gap={2}
+        >
+          <Typography variant="subtitle1" fontWeight={600}>
+            Filter by Date Range
+          </Typography>
           <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
             <TextField
               type="date"
@@ -228,45 +279,73 @@ const Home: React.FC = () => {
               InputLabelProps={{ shrink: true }}
               size="small"
             />
-            <Button variant="outlined" onClick={clearDateFilter}>Clear</Button>
+            <Button variant="outlined" onClick={clearDateFilter}>
+              Clear
+            </Button>
           </Box>
         </Box>
       </Paper>
       <Box display="grid" gap={2} gridTemplateColumns={{ xs: '1fr', md: 'repeat(4, 1fr)' }} mb={3}>
         <Paper sx={{ p: 2.5, textAlign: 'center' }}>
-          <Typography variant="subtitle1" color="primary">Total Invoices</Typography>
-          <Typography variant="h4" fontWeight={700}>{stats.totalInvoices}</Typography>
+          <Typography variant="subtitle1" color="primary">
+            Total Invoices
+          </Typography>
+          <Typography variant="h4" fontWeight={700}>
+            {stats.totalInvoices}
+          </Typography>
         </Paper>
         <Paper sx={{ p: 2.5, textAlign: 'center' }}>
-          <Typography variant="subtitle1" color="success.main">Total Revenue</Typography>
-          <Typography variant="h4" fontWeight={700}>{formatCurrency(stats.totalRevenue)}</Typography>
+          <Typography variant="subtitle1" color="success.main">
+            Total Revenue
+          </Typography>
+          <Typography variant="h4" fontWeight={700}>
+            {formatCurrency(stats.totalRevenue)}
+          </Typography>
         </Paper>
         <Paper sx={{ p: 2.5, textAlign: 'center' }}>
-          <Typography variant="subtitle1" color="warning.main">Outstanding Invoices</Typography>
-          <Typography variant="h4" fontWeight={700}>{stats.outstandingInvoices}</Typography>
+          <Typography variant="subtitle1" color="warning.main">
+            Outstanding Invoices
+          </Typography>
+          <Typography variant="h4" fontWeight={700}>
+            {stats.outstandingInvoices}
+          </Typography>
         </Paper>
         <Paper sx={{ p: 2.5, textAlign: 'center' }}>
-          <Typography variant="subtitle1" color="error.main">Outstanding Amount</Typography>
-          <Typography variant="h4" fontWeight={700}>{formatCurrency(stats.outstandingAmount)}</Typography>
+          <Typography variant="subtitle1" color="error.main">
+            Outstanding Amount
+          </Typography>
+          <Typography variant="h4" fontWeight={700}>
+            {formatCurrency(stats.outstandingAmount)}
+          </Typography>
         </Paper>
       </Box>
       <Box display="grid" gap={3} gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} mb={3}>
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>Revenue Trend (Last 6 Months)</Typography>
+          <Typography variant="h6" fontWeight={600} mb={2}>
+            Revenue Trend (Last 6 Months)
+          </Typography>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={revenueHistory}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value: any) => formatCurrency(value)} />
+              <Tooltip formatter={(value: number | undefined) => formatCurrency(value ?? 0)} />
               <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} name="Revenue" />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#2563eb"
+                strokeWidth={2}
+                name="Revenue"
+              />
             </LineChart>
           </ResponsiveContainer>
         </Paper>
 
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>Invoice Status Breakdown</Typography>
+          <Typography variant="h6" fontWeight={600} mb={2}>
+            Invoice Status Breakdown
+          </Typography>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -279,8 +358,8 @@ const Home: React.FC = () => {
                 nameKey="status"
                 label
               >
-                {statusBreakdown.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={getStatusCssColor(entry.status)} />
+                {statusBreakdown.map((entry: DbRow, index: number) => (
+                  <Cell key={`cell-${index}`} fill={getStatusCssColor(entry.status as string)} />
                 ))}
               </Pie>
               <Tooltip />
@@ -291,13 +370,15 @@ const Home: React.FC = () => {
       </Box>
 
       <Paper sx={{ p: 2.5, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Paid vs Outstanding (Monthly)</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>
+          Paid vs Outstanding (Monthly)
+        </Typography>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={monthlyComparison}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
-            <Tooltip formatter={(value: any) => formatCurrency(value)} />
+            <Tooltip formatter={(value: number | undefined) => formatCurrency(value ?? 0)} />
             <Legend />
             <Bar dataKey="paid" fill="#16a34a" name="Paid" />
             <Bar dataKey="outstanding" fill="#f59e0b" name="Outstanding" />
@@ -306,7 +387,9 @@ const Home: React.FC = () => {
       </Paper>
 
       <Paper sx={{ p: 2.5 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Recent Invoices</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>
+          Recent Invoices
+        </Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -320,21 +403,24 @@ const Home: React.FC = () => {
           <TableBody>
             {recentInvoices.length > 0 ? (
               recentInvoices.map((invoice) => (
-                <TableRow 
-                  key={invoice.id}
+                <TableRow
+                  key={invoice.id as number}
                   hover
                   sx={{ cursor: 'pointer' }}
                   onClick={() => navigate(`/invoices/${invoice.id}`)}
                 >
-                  <TableCell>{invoice.invoice_number}</TableCell>
-                  <TableCell>{invoice.customer_name}</TableCell>
-                  <TableCell>{invoice.issue_date}</TableCell>
-                  <TableCell>{formatCurrency(invoice.total)}</TableCell>
+                  <TableCell>{invoice.invoice_number as string}</TableCell>
+                  <TableCell>{invoice.customer_name as string}</TableCell>
+                  <TableCell>{invoice.issue_date as string}</TableCell>
+                  <TableCell>{formatCurrency(invoice.total as number)}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label={invoice.status} 
+                    <Chip
+                      label={invoice.status as string}
                       size="small"
-                      sx={{ bgcolor: getStatusCssColor(invoice.status), color: '#fff' }}
+                      sx={{
+                        bgcolor: getStatusCssColor(invoice.status as string),
+                        color: '#fff',
+                      }}
                     />
                   </TableCell>
                 </TableRow>

@@ -4,12 +4,7 @@
   "directories": {
     "output": "release"
   },
-  "files": [
-    "dist/electron/**/*",
-    "dist/electron/templates/**/*",
-    "electron/**/*",
-    "public/**/*"
-  ],
+  "files": ["dist/electron/**/*", "dist/electron/templates/**/*", "electron/**/*", "public/**/*"],
   "extraResources": [
     {
       "from": "src/templates",
@@ -21,19 +16,14 @@
     "main": "dist/electron/main.js"
   },
   "mac": {
-    "target": [
-      "dmg"
-    ],
+    "target": ["dmg"],
     "icon": "public/icon.icns"
   },
   "win": {
     "target": [
       {
         "target": "nsis",
-        "arch": [
-          "x64",
-          "ia32"
-        ]
+        "arch": ["x64", "ia32"]
       }
     ],
     "icon": "public/icon.ico"

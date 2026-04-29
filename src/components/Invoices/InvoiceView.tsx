@@ -11,9 +11,19 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Typography
+  Typography,
 } from '@mui/material';
-import { ArrowLeft, CheckCircle, Copy, Download, Edit, FileText, Mail, Trash2, XCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle,
+  Copy,
+  Download,
+  Edit,
+  FileText,
+  Mail,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import InvoiceForm from './InvoiceForm';
 import InvoiceAttachments from './InvoiceAttachments';
 import Breadcrumbs from '../Layout/Breadcrumbs';
@@ -90,7 +100,10 @@ const InvoiceView: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const invoiceResponse = await api.query('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL', [invoiceId]);
+      const invoiceResponse = await api.query(
+        'SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL',
+        [invoiceId],
+      );
       if (!invoiceResponse.success || !invoiceResponse.data?.length) {
         setInvoice(null);
         setCustomer(null);
@@ -104,15 +117,25 @@ const InvoiceView: React.FC = () => {
 
       const [customerResponse, lineItemResponse, emailLogResponse] = await Promise.all([
         api.query('SELECT * FROM customers WHERE id = ?', [invoiceRecord.customer_id]),
-        api.query('SELECT * FROM invoice_line_items WHERE invoice_id = ? ORDER BY sort_order', [invoiceId]),
-        api.query('SELECT * FROM email_logs WHERE invoice_id = ? ORDER BY sent_at DESC', [invoiceId])
+        api.query('SELECT * FROM invoice_line_items WHERE invoice_id = ? ORDER BY sort_order', [
+          invoiceId,
+        ]),
+        api.query('SELECT * FROM email_logs WHERE invoice_id = ? ORDER BY sent_at DESC', [
+          invoiceId,
+        ]),
       ]);
 
-      setCustomer((customerResponse.success && customerResponse.data?.length
-        ? (customerResponse.data[0] as CustomerRecord)
-        : null));
-      setLineItems((lineItemResponse.success ? (lineItemResponse.data as LineItemRecord[]) : []) || []);
-      setEmailLogs((emailLogResponse.success ? (emailLogResponse.data as EmailLogRecord[]) : []) || []);
+      setCustomer(
+        customerResponse.success && customerResponse.data?.length
+          ? (customerResponse.data[0] as CustomerRecord)
+          : null,
+      );
+      setLineItems(
+        (lineItemResponse.success ? (lineItemResponse.data as LineItemRecord[]) : []) || [],
+      );
+      setEmailLogs(
+        (emailLogResponse.success ? (emailLogResponse.data as EmailLogRecord[]) : []) || [],
+      );
     } catch (error) {
       console.error('[InvoiceView] Failed to load invoice:', error);
       toast.error('Failed to load invoice data');
@@ -127,6 +150,7 @@ const InvoiceView: React.FC = () => {
 
   useEffect(() => {
     void loadInvoice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoiceId]);
 
   const handleCloseForm = () => {
@@ -151,7 +175,10 @@ const InvoiceView: React.FC = () => {
         toast.success('Invoice sent successfully', { id: toastId });
         void loadInvoice();
       } else {
-        toast.error(`Failed to send invoice: ${response.error || 'Please check SMTP settings and try again.'}`, { id: toastId });
+        toast.error(
+          `Failed to send invoice: ${response.error || 'Please check SMTP settings and try again.'}`,
+          { id: toastId },
+        );
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error || 'Unknown error');
@@ -169,7 +196,7 @@ const InvoiceView: React.FC = () => {
     const saveResponse = await showSaveDialog({
       title: 'Save Invoice PDF',
       defaultPath: fileName,
-      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
     if (!saveResponse.success) {
       alert('Unable to open save dialog: ' + (saveResponse.error || 'Unknown error'));
@@ -183,7 +210,7 @@ const InvoiceView: React.FC = () => {
       customer,
       line_items: lineItems,
       subtotal: invoice.subtotal,
-      total: invoice.total
+      total: invoice.total,
     };
     const response = await api.generatePDF(pdfPayload, saveResponse.filePath);
     if (!response.success) {
@@ -196,7 +223,7 @@ const InvoiceView: React.FC = () => {
       return;
     }
     const updates = [status];
-    let query = 'UPDATE invoices SET status = ?, updated_at = datetime(\'now\')';
+    let query = "UPDATE invoices SET status = ?, updated_at = datetime('now')";
     if (timestampField) {
       query += `, ${timestampField} = datetime('now')`;
     }
@@ -213,20 +240,46 @@ const InvoiceView: React.FC = () => {
       return;
     }
     const response = await api.query(
-      'INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, status, payment_terms, subtotal, total, notes, internal_memo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
-      [`${invoice.invoice_number}-copy`, invoice.customer_id, invoice.issue_date, invoice.due_date, 'Draft', invoice.payment_terms, invoice.subtotal, invoice.total, invoice.notes, invoice.internal_memo]
+      "INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, status, payment_terms, subtotal, total, notes, internal_memo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+      [
+        `${invoice.invoice_number}-copy`,
+        invoice.customer_id,
+        invoice.issue_date,
+        invoice.due_date,
+        'Draft',
+        invoice.payment_terms,
+        invoice.subtotal,
+        invoice.total,
+        invoice.notes,
+        invoice.internal_memo,
+      ],
     );
-    const newInvoiceId = response.success && response.data?.[0] && typeof (response.data[0] as { lastInsertRowid?: number }).lastInsertRowid === 'number'
-      ? (response.data[0] as { lastInsertRowid: number }).lastInsertRowid
-      : null;
+    const newInvoiceId =
+      response.success &&
+      response.data?.[0] &&
+      typeof (response.data[0] as { lastInsertRowid?: number }).lastInsertRowid === 'number'
+        ? (response.data[0] as { lastInsertRowid: number }).lastInsertRowid
+        : null;
     if (!newInvoiceId) {
       alert('Failed to duplicate invoice.');
       return;
     }
-    await Promise.all(lineItems.map((item, index) => api.query(
-      'INSERT INTO invoice_line_items (invoice_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
-      [newInvoiceId, item.product_name, item.description || '', item.unit_price, item.quantity, item.line_total, index]
-    )));
+    await Promise.all(
+      lineItems.map((item, index) =>
+        api.query(
+          "INSERT INTO invoice_line_items (invoice_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+          [
+            newInvoiceId,
+            item.product_name,
+            item.description || '',
+            item.unit_price,
+            item.quantity,
+            item.line_total,
+            index,
+          ],
+        ),
+      ),
+    );
     navigate(`/invoices/${newInvoiceId}`);
   };
 
@@ -234,12 +287,16 @@ const InvoiceView: React.FC = () => {
     if (!invoice) {
       return;
     }
-    if (!window.confirm('Are you sure you want to cancel this invoice? This will mark it as Cancelled.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to cancel this invoice? This will mark it as Cancelled.',
+      )
+    ) {
       return;
     }
     const response = await api.query(
-      'UPDATE invoices SET status = ?, updated_at = datetime(\'now\') WHERE id = ?',
-      ['Cancelled', invoice.id]
+      "UPDATE invoices SET status = ?, updated_at = datetime('now') WHERE id = ?",
+      ['Cancelled', invoice.id],
     );
     if (!response.success) {
       toast.error('Failed to cancel invoice: ' + (response.error || 'Unknown error'));
@@ -257,8 +314,8 @@ const InvoiceView: React.FC = () => {
       return;
     }
     const response = await api.query(
-      'UPDATE invoices SET deleted_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE id = ?',
-      [invoice.id]
+      "UPDATE invoices SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+      [invoice.id],
     );
     if (!response.success) {
       toast.error('Failed to delete invoice: ' + (response.error || 'Unknown error'));
@@ -296,23 +353,41 @@ const InvoiceView: React.FC = () => {
         items={[
           { label: 'Home', to: '/' },
           { label: 'Invoices', to: '/invoices' },
-          { label: `Invoice ${invoice.invoice_number}` }
+          { label: `Invoice ${invoice.invoice_number}` },
         ]}
       />
       <Paper sx={{ p: 3 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2} mb={3}>
+        <Box
+          display="flex"
+          flexDirection={{ xs: 'column', md: 'row' }}
+          justifyContent="space-between"
+          gap={2}
+          mb={3}
+        >
           <Box>
             <Typography variant="h4" fontWeight={700} mb={1}>
               Invoice {invoice.invoice_number}
             </Typography>
             <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-              <Chip label={invoice.status} sx={{ bgcolor: getStatusCssColor(invoice.status), color: '#fff' }} size="small" />
-              <Typography variant="body2" color="text.secondary">Issued: {invoice.issue_date}</Typography>
-              <Typography variant="body2" color="text.secondary">Due: {invoice.due_date}</Typography>
+              <Chip
+                label={invoice.status}
+                sx={{ bgcolor: getStatusCssColor(invoice.status), color: '#fff' }}
+                size="small"
+              />
+              <Typography variant="body2" color="text.secondary">
+                Issued: {invoice.issue_date}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Due: {invoice.due_date}
+              </Typography>
             </Box>
           </Box>
           <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="center">
-            <Button variant="outlined" startIcon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate('/invoices')}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => navigate('/invoices')}
+            >
               Back
             </Button>
             <Button
@@ -329,9 +404,13 @@ const InvoiceView: React.FC = () => {
               onClick={handleSendInvoice}
               disabled={isSending || ['Cancelled', 'Paid'].includes(invoice.status)}
             >
-              {isSending ? 'Sending...' : (invoice.status === 'Draft' ? 'Send' : 'Resend')}
+              {isSending ? 'Sending...' : invoice.status === 'Draft' ? 'Send' : 'Resend'}
             </Button>
-            <Button variant="outlined" startIcon={<Download className="h-4 w-4" />} onClick={handleDownloadPdf}>
+            <Button
+              variant="outlined"
+              startIcon={<Download className="h-4 w-4" />}
+              onClick={handleDownloadPdf}
+            >
               Download PDF
             </Button>
             <Button
@@ -343,16 +422,20 @@ const InvoiceView: React.FC = () => {
             >
               Mark Paid
             </Button>
-            <Button 
-              variant="outlined" 
-              color="warning" 
-              startIcon={<XCircle className="h-4 w-4" />} 
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<XCircle className="h-4 w-4" />}
               onClick={handleCancelInvoice}
               disabled={invoice.status === 'Cancelled' || invoice.status === 'Draft'}
             >
               Cancel Invoice
             </Button>
-            <Button variant="outlined" startIcon={<Copy className="h-4 w-4" />} onClick={handleDuplicate}>
+            <Button
+              variant="outlined"
+              startIcon={<Copy className="h-4 w-4" />}
+              onClick={handleDuplicate}
+            >
               Duplicate
             </Button>
             <Button
@@ -371,11 +454,21 @@ const InvoiceView: React.FC = () => {
 
         <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1.1fr 1fr' }} gap={3} mb={3}>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>Customer</Typography>
-            <Typography variant="h6" fontWeight={600}>{customer?.name || 'Unknown Customer'}</Typography>
-            <Typography variant="body2" color="text.secondary">{customer?.email || 'No email'}</Typography>
-            <Typography variant="body2" color="text.secondary">{customer?.phone || 'No phone'}</Typography>
-            <Typography variant="body2" color="text.secondary">{customer?.billing_address || 'No billing address'}</Typography>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              Customer
+            </Typography>
+            <Typography variant="h6" fontWeight={600}>
+              {customer?.name || 'Unknown Customer'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {customer?.email || 'No email'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {customer?.phone || 'No phone'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {customer?.billing_address || 'No billing address'}
+            </Typography>
             {customer && (
               <Button
                 variant="text"
@@ -387,17 +480,25 @@ const InvoiceView: React.FC = () => {
             )}
           </Paper>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>Totals</Typography>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              Totals
+            </Typography>
             <Box display="flex" flexDirection="column" gap={1}>
               <Typography variant="body1">Subtotal: {formatCurrency(invoice.subtotal)}</Typography>
-              <Typography variant="body1" fontWeight={600}>Total: {formatCurrency(invoice.total)}</Typography>
-              <Typography variant="body2" color="text.secondary">Payment terms: {invoice.payment_terms || '—'}</Typography>
+              <Typography variant="body1" fontWeight={600}>
+                Total: {formatCurrency(invoice.total)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Payment terms: {invoice.payment_terms || '—'}
+              </Typography>
             </Box>
           </Paper>
         </Box>
 
         <Paper sx={{ p: 2.5, mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600} mb={2}>Line Items</Typography>
+          <Typography variant="subtitle1" fontWeight={600} mb={2}>
+            Line Items
+          </Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -424,20 +525,32 @@ const InvoiceView: React.FC = () => {
 
         <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>Notes</Typography>
-            <Typography variant="body2" color="text.secondary">{invoice.notes || '—'}</Typography>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              Notes
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {invoice.notes || '—'}
+            </Typography>
           </Paper>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>Internal Memo</Typography>
-            <Typography variant="body2" color="text.secondary">{invoice.internal_memo || '—'}</Typography>
+            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              Internal Memo
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {invoice.internal_memo || '—'}
+            </Typography>
           </Paper>
         </Box>
 
         <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={2}>Email History</Typography>
+            <Typography variant="subtitle1" fontWeight={600} mb={2}>
+              Email History
+            </Typography>
             {emailLogs.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">No emails sent yet.</Typography>
+              <Typography variant="body2" color="text.secondary">
+                No emails sent yet.
+              </Typography>
             ) : (
               <Table size="small">
                 <TableHead>
@@ -466,7 +579,9 @@ const InvoiceView: React.FC = () => {
         </Box>
 
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} mb={1}>Audit Trail</Typography>
+          <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            Audit Trail
+          </Typography>
           <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }} gap={1.5}>
             <Typography variant="body2">Created: {invoice.created_at || '—'}</Typography>
             <Typography variant="body2">Updated: {invoice.updated_at || '—'}</Typography>
@@ -476,7 +591,10 @@ const InvoiceView: React.FC = () => {
         </Paper>
       </Paper>
       {showForm && (
-        <InvoiceForm invoice={invoice as unknown as { [key: string]: string | number }} onClose={handleCloseForm} />
+        <InvoiceForm
+          invoice={invoice as unknown as { [key: string]: string | number }}
+          onClose={handleCloseForm}
+        />
       )}
     </Box>
   );

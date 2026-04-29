@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Users, Search, Eye, MoreVertical } from 'lucide-react';
-import { Box, Button, IconButton, InputAdornment, Menu, MenuItem, Paper, TextField } from '@mui/material';
+import {
+  Box,
+  Button,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Paper,
+  TextField,
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import CustomerForm from './CustomerForm';
 import { EmptyState } from '../ui/EmptyState';
 import { TableSkeleton } from '../ui/SkeletonLoader';
 import { api } from '../../services/api';
+import type { DbRow } from '../../types';
 import '../../types';
 
 const CustomerList: React.FC = () => {
@@ -16,7 +26,9 @@ const CustomerList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<{ [key: string]: string | number } | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<{ [key: string]: string | number } | null>(
+    null,
+  );
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuCustomerId, setMenuCustomerId] = useState<number | null>(null);
 
@@ -52,22 +64,34 @@ const CustomerList: React.FC = () => {
     };
   }, []);
 
-  const filteredCustomers = customers.filter(customer => {
-    return String(customer.name).toLowerCase().includes(searchTerm.toLowerCase()) || 
-           String(customer.email).toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCustomers = customers.filter((customer) => {
+    return (
+      String(customer.name).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(customer.email).toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   const handleDelete = async (id: number) => {
-    const invoiceCheck = await api.query('SELECT COUNT(*) as count FROM invoices WHERE customer_id = ?', [id]);
-    const invoiceCount = invoiceCheck.success && invoiceCheck.data?.length ? (invoiceCheck.data[0] as any).count : 0;
+    const invoiceCheck = await api.query(
+      'SELECT COUNT(*) as count FROM invoices WHERE customer_id = ?',
+      [id],
+    );
+    const invoiceCount =
+      invoiceCheck.success && invoiceCheck.data?.length
+        ? ((invoiceCheck.data[0] as DbRow).count as number)
+        : 0;
     if (invoiceCount > 0) {
-      alert(`Cannot delete this customer: ${invoiceCount} invoice(s) are associated with them. Delete or reassign the invoices first.`);
+      alert(
+        `Cannot delete this customer: ${invoiceCount} invoice(s) are associated with them. Delete or reassign the invoices first.`,
+      );
       return;
     }
-    if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+    if (
+      window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')
+    ) {
       const response = await api.query('DELETE FROM customers WHERE id = ?', [id]);
       if (response.success) {
-        setCustomers(customers.filter(c => c.id !== id));
+        setCustomers(customers.filter((c) => c.id !== id));
       } else {
         alert('Cannot delete customer: ' + (response.error || 'Unknown error'));
       }
@@ -105,15 +129,16 @@ const CustomerList: React.FC = () => {
 
   const handleMenuAction = (action: 'view' | 'edit' | 'delete') => {
     if (menuCustomerId === null) return;
-    
+
     switch (action) {
       case 'view':
         handleViewCustomer(menuCustomerId);
         break;
-      case 'edit':
-        const customer = customers.find(c => c.id === menuCustomerId);
+      case 'edit': {
+        const customer = customers.find((c) => c.id === menuCustomerId);
         if (customer) handleEditCustomer(customer);
         break;
+      }
       case 'delete':
         handleDelete(menuCustomerId);
         break;
@@ -123,7 +148,14 @@ const CustomerList: React.FC = () => {
 
   return (
     <Paper sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }} gap={2} mb={3} flexDirection={{ xs: 'column', md: 'row' }}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        gap={2}
+        mb={3}
+        flexDirection={{ xs: 'column', md: 'row' }}
+      >
         <TextField
           placeholder="Search customers..."
           value={searchTerm}
@@ -134,11 +166,15 @@ const CustomerList: React.FC = () => {
               <InputAdornment position="start">
                 <Search className="h-4 w-4" />
               </InputAdornment>
-            )
+            ),
           }}
           sx={{ maxWidth: 360 }}
         />
-        <Button variant="contained" startIcon={<Plus className="h-4 w-4" />} onClick={handleAddCustomer}>
+        <Button
+          variant="contained"
+          startIcon={<Plus className="h-4 w-4" />}
+          onClick={handleAddCustomer}
+        >
           Add Customer
         </Button>
       </Box>
@@ -148,60 +184,71 @@ const CustomerList: React.FC = () => {
         ) : filteredCustomers.length > 0 ? (
           <Box sx={{ width: '100%' }}>
             <DataGrid
-              rows={filteredCustomers.map(customer => ({
+              rows={filteredCustomers.map((customer) => ({
                 id: Number(customer.id),
                 name: String(customer.name),
                 email: String(customer.email),
                 phone: String(customer.phone || 'N/A'),
-                billingAddress: String(customer.billing_address || '')
+                billingAddress: String(customer.billing_address || ''),
               }))}
-              columns={([
-                {
-                  field: 'name',
-                  headerName: 'Name',
-                  flex: 1.2,
-                  minWidth: 160,
-                  renderCell: (params) => (
-                    <Button variant="text" onClick={() => handleViewCustomer(Number(params.row.id))}>
-                      {params.value}
-                    </Button>
-                  )
-                },
-                { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 200 },
-                { field: 'phone', headerName: 'Phone', flex: 1, minWidth: 140 },
-                { field: 'billingAddress', headerName: 'Billing Address', flex: 1.8, minWidth: 220 },
-                {
-                  field: 'actions',
-                  headerName: 'Actions',
-                  sortable: false,
-                  filterable: false,
-                  width: 80,
-                  renderCell: (params) => (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleMenuOpen(e, Number(params.row.id))}
-                      aria-label="Customer actions"
-                      color="default"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </IconButton>
-                  )
-                }
-              ] as GridColDef[])}
+              columns={
+                [
+                  {
+                    field: 'name',
+                    headerName: 'Name',
+                    flex: 1.2,
+                    minWidth: 160,
+                    renderCell: (params) => (
+                      <Button
+                        variant="text"
+                        onClick={() => handleViewCustomer(Number(params.row.id))}
+                      >
+                        {params.value}
+                      </Button>
+                    ),
+                  },
+                  { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 200 },
+                  { field: 'phone', headerName: 'Phone', flex: 1, minWidth: 140 },
+                  {
+                    field: 'billingAddress',
+                    headerName: 'Billing Address',
+                    flex: 1.8,
+                    minWidth: 220,
+                  },
+                  {
+                    field: 'actions',
+                    headerName: 'Actions',
+                    sortable: false,
+                    filterable: false,
+                    width: 80,
+                    renderCell: (params) => (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuOpen(e, Number(params.row.id))}
+                        aria-label="Customer actions"
+                        color="default"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </IconButton>
+                    ),
+                  },
+                ] as GridColDef[]
+              }
               disableRowSelectionOnClick
               autoHeight
               pageSizeOptions={[10, 25, 50]}
               initialState={{
                 pagination: {
-                  paginationModel: { pageSize: 10, page: 0 }
-                }
+                  paginationModel: { pageSize: 10, page: 0 },
+                },
               }}
             />
           </Box>
         ) : null}
       </Box>
-      {filteredCustomers.length === 0 && !isLoading && (
-        searchTerm ? (
+      {filteredCustomers.length === 0 &&
+        !isLoading &&
+        (searchTerm ? (
           <EmptyState
             icon={Search}
             title="No customers found"
@@ -217,14 +264,11 @@ const CustomerList: React.FC = () => {
             actionLabel="Add Customer"
             onAction={handleAddCustomer}
           />
-        )
+        ))}
+      {showForm && (
+        <CustomerForm customer={editingCustomer || undefined} onClose={handleCloseForm} />
       )}
-      {showForm && <CustomerForm customer={editingCustomer || undefined} onClose={handleCloseForm} />}
-      <Menu
-        anchorEl={menuAnchorEl}
-        open={Boolean(menuAnchorEl)}
-        onClose={handleMenuClose}
-      >
+      <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleMenuClose}>
         <MenuItem onClick={() => handleMenuAction('view')}>
           <Eye className="h-4 w-4 mr-2" />
           View

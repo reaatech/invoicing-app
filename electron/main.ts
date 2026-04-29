@@ -6,7 +6,7 @@ import { showBackupReminder } from './database/backup.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import puppeteer from 'puppeteer';
-import mustache from 'mustache'; 
+import mustache from 'mustache';
 import fs from 'fs';
 import { registerInvoiceSend } from './email-sender.js';
 
@@ -25,10 +25,16 @@ ipcMain.on('database-query', (event, query, params, requestId) => {
       event.sender.send('database-response', { success: true, data: results, requestId });
     } else {
       const result = params ? stmt.run(...params) : stmt.run();
-      event.sender.send('database-response', { success: true, data: [{
-        lastInsertRowid: Number(result.lastInsertRowid),
-        changes: result.changes
-      }], requestId });
+      event.sender.send('database-response', {
+        success: true,
+        data: [
+          {
+            lastInsertRowid: Number(result.lastInsertRowid),
+            changes: result.changes,
+          },
+        ],
+        requestId,
+      });
     }
   } catch (error: unknown) {
     event.sender.send('database-response', { success: false, error: String(error), requestId });
@@ -40,12 +46,12 @@ ipcMain.on('show-save-dialog', async (event, options) => {
     const result = await dialog.showSaveDialog({
       title: options?.title || 'Save file',
       defaultPath: options?.defaultPath,
-      filters: options?.filters || []
+      filters: options?.filters || [],
     });
     event.sender.send('show-save-dialog-response', {
       success: true,
       canceled: result.canceled,
-      filePath: result.filePath || null
+      filePath: result.filePath || null,
     });
   } catch (error: unknown) {
     event.sender.send('show-save-dialog-response', { success: false, error: String(error) });
@@ -74,18 +80,18 @@ ipcMain.on('settings-save', (event, settings) => {
 ipcMain.on('generate-pdf', async (event, invoiceData, outputPath) => {
   try {
     console.log('[PDF Generate] Start', { outputPath });
-    
+
     // Fetch company settings
     const settings = db.prepare('SELECT * FROM settings WHERE id = 1').get();
     if (!settings) {
       throw new Error('Company settings not found');
     }
-    
+
     // Format data to match email template structure
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'USD',
       }).format(amount);
     };
 
@@ -95,32 +101,32 @@ ipcMain.on('generate-pdf', async (event, invoiceData, outputPath) => {
         address: settings.company_address,
         email: settings.company_email,
         phone: settings.company_phone,
-        logo: settings.logo_base64
+        logo: settings.logo_base64,
       },
       customer: {
         name: invoiceData.customer.name,
         email: invoiceData.customer.email,
-        billing_address: invoiceData.customer.billing_address
+        billing_address: invoiceData.customer.billing_address,
       },
       invoice: {
         number: invoiceData.invoice.invoice_number,
         issue_date: invoiceData.invoice.issue_date,
         due_date: invoiceData.invoice.due_date,
         payment_terms: invoiceData.invoice.payment_terms,
-        notes: invoiceData.invoice.notes
+        notes: invoiceData.invoice.notes,
       },
-      line_items: invoiceData.line_items.map((item: any) => ({
+      line_items: invoiceData.line_items.map((item: Record<string, unknown>) => ({
         ...item,
-        unit_price_formatted: formatCurrency(item.unit_price),
-        line_total_formatted: formatCurrency(item.line_total)
+        unit_price_formatted: formatCurrency(item.unit_price as number),
+        line_total_formatted: formatCurrency(item.line_total as number),
       })),
       subtotal: invoiceData.subtotal,
       total: invoiceData.total,
       subtotal_formatted: formatCurrency(invoiceData.subtotal),
-      total_formatted: formatCurrency(invoiceData.total)
+      total_formatted: formatCurrency(invoiceData.total),
     };
-    
-    const templatePath = app.isPackaged 
+
+    const templatePath = app.isPackaged
       ? path.join(process.resourcesPath, 'templates/invoice.mustache')
       : path.join(__dirname, '../../src/templates/invoice.mustache');
     console.log('[PDF Generate] Template path', { templatePath });
@@ -145,10 +151,10 @@ ipcMain.on('generate-pdf', async (event, invoiceData, outputPath) => {
 // Get next invoice number
 ipcMain.on('get-next-invoice-number', (event) => {
   try {
-    const lastInvoice = db.prepare(
-      'SELECT invoice_number FROM invoices ORDER BY id DESC LIMIT 1'
-    ).get() as { invoice_number: string } | undefined;
-    
+    const lastInvoice = db
+      .prepare('SELECT invoice_number FROM invoices ORDER BY id DESC LIMIT 1')
+      .get() as { invoice_number: string } | undefined;
+
     let nextNumber: string;
     if (!lastInvoice) {
       nextNumber = '1001'; // Starting number
@@ -156,7 +162,7 @@ ipcMain.on('get-next-invoice-number', (event) => {
       const lastNumber = parseInt(lastInvoice.invoice_number);
       nextNumber = (lastNumber + 1).toString();
     }
-    
+
     event.sender.send('invoice-number-response', { success: true, invoiceNumber: nextNumber });
   } catch (error: unknown) {
     event.sender.send('invoice-number-response', { success: false, error: String(error) });
@@ -170,12 +176,12 @@ ipcMain.on('show-open-dialog', async (event, options) => {
     const result = await dialog.showOpenDialog(win!, {
       title: options?.title || 'Select files',
       properties: ['openFile', 'multiSelections'],
-      filters: options?.filters || []
+      filters: options?.filters || [],
     });
     event.sender.send('show-open-dialog-response', {
       success: true,
       canceled: result.canceled,
-      filePaths: result.filePaths || []
+      filePaths: result.filePaths || [],
     });
   } catch (error: unknown) {
     console.error('[Main] Dialog error:', error);
@@ -199,10 +205,14 @@ ipcMain.on('upload-attachment', async (event, invoiceId, filePath) => {
     fs.copyFileSync(filePath, destPath);
     const stats = fs.statSync(destPath);
 
-    const result = db.prepare(`
+    const result = db
+      .prepare(
+        `
       INSERT INTO invoice_attachments (invoice_id, filename, original_filename, file_path, file_size, mime_type)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(invoiceId, filename, originalFilename, destPath, stats.size, null);
+    `,
+      )
+      .run(invoiceId, filename, originalFilename, destPath, stats.size, null);
 
     event.sender.send('upload-attachment-response', {
       success: true,
@@ -212,8 +222,8 @@ ipcMain.on('upload-attachment', async (event, invoiceId, filePath) => {
         filename,
         original_filename: originalFilename,
         file_path: destPath,
-        file_size: stats.size
-      }
+        file_size: stats.size,
+      },
     });
   } catch (error: unknown) {
     event.sender.send('upload-attachment-response', { success: false, error: String(error) });
@@ -222,8 +232,14 @@ ipcMain.on('upload-attachment', async (event, invoiceId, filePath) => {
 
 ipcMain.on('delete-attachment', (event, attachmentId) => {
   try {
-    const attachment = db.prepare('SELECT * FROM invoice_attachments WHERE id = ?').get(attachmentId) as any;
-    if (attachment && fs.existsSync(attachment.file_path)) {
+    const attachment = db
+      .prepare('SELECT * FROM invoice_attachments WHERE id = ?')
+      .get(attachmentId) as Record<string, unknown> | undefined;
+    if (
+      attachment &&
+      typeof attachment.file_path === 'string' &&
+      fs.existsSync(attachment.file_path)
+    ) {
       fs.unlinkSync(attachment.file_path);
     }
     db.prepare('DELETE FROM invoice_attachments WHERE id = ?').run(attachmentId);
@@ -251,10 +267,13 @@ ipcMain.on('export-data', (event) => {
       products,
       invoices,
       line_items: lineItems,
-      email_logs: emailLogs
+      email_logs: emailLogs,
     };
 
-    event.sender.send('export-response', { success: true, data: JSON.stringify(exportData, null, 2) });
+    event.sender.send('export-response', {
+      success: true,
+      data: JSON.stringify(exportData, null, 2),
+    });
   } catch (error: unknown) {
     event.sender.send('export-response', { success: false, error: String(error) });
   }
@@ -275,13 +294,13 @@ ipcMain.on('import-data', (event, jsonData) => {
       products: ['name', 'unit_price', 'unit_type'],
       invoices: ['invoice_number', 'customer_id', 'issue_date', 'due_date', 'status'],
       line_items: ['invoice_id', 'product_name', 'unit_price', 'quantity', 'line_total'],
-      email_logs: ['invoice_id', 'recipient_email', 'sent_at', 'status']
+      email_logs: ['invoice_id', 'recipient_email', 'sent_at', 'status'],
     };
 
     for (const [key, fields] of Object.entries(requiredFields)) {
       if (data[key] && Array.isArray(data[key])) {
-        data[key].forEach((item: any, index: number) => {
-          fields.forEach(field => {
+        data[key].forEach((item: Record<string, unknown>, index: number) => {
+          fields.forEach((field) => {
             if (!(field in item)) {
               throw new Error(`Missing required field ${field} in ${key} at index ${index}`);
             }
@@ -293,7 +312,8 @@ ipcMain.on('import-data', (event, jsonData) => {
     db.transaction(() => {
       if (data.settings && data.settings.length > 0) {
         const settings = data.settings[0];
-        db.prepare(`
+        db.prepare(
+          `
           INSERT OR REPLACE INTO settings 
           (id, company_name, company_address, company_email, company_phone, logo_base64, 
            invoice_due_days, invoice_prefix, smtp_host, smtp_port, smtp_user, smtp_password, smtp_secure, 
@@ -301,11 +321,20 @@ ipcMain.on('import-data', (event, jsonData) => {
           VALUES 
           (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
            COALESCE((SELECT created_at FROM settings WHERE id=1), datetime('now')), datetime('now'))
-        `).run(
-          settings.company_name, settings.company_address, settings.company_email, 
-          settings.company_phone, settings.logo_base64, settings.invoice_due_days, 
-          settings.invoice_prefix, settings.smtp_host, settings.smtp_port, 
-          settings.smtp_user, settings.smtp_password, settings.smtp_secure
+        `,
+        ).run(
+          settings.company_name,
+          settings.company_address,
+          settings.company_email,
+          settings.company_phone,
+          settings.logo_base64,
+          settings.invoice_due_days,
+          settings.invoice_prefix,
+          settings.smtp_host,
+          settings.smtp_port,
+          settings.smtp_user,
+          settings.smtp_password,
+          settings.smtp_secure,
         );
       }
 
@@ -314,8 +343,14 @@ ipcMain.on('import-data', (event, jsonData) => {
           INSERT INTO customers (name, email, billing_address, phone, notes, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         `);
-        data.customers.forEach((customer: any) => {
-          insertCustomer.run(customer.name, customer.email, customer.billing_address, customer.phone, customer.notes);
+        data.customers.forEach((customer: Record<string, unknown>) => {
+          insertCustomer.run(
+            customer.name,
+            customer.email,
+            customer.billing_address,
+            customer.phone,
+            customer.notes,
+          );
         });
       }
 
@@ -324,8 +359,13 @@ ipcMain.on('import-data', (event, jsonData) => {
           INSERT INTO products (name, description, unit_price, unit_type, created_at, updated_at)
           VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
         `);
-        data.products.forEach((product: any) => {
-          insertProduct.run(product.name, product.description, product.unit_price, product.unit_type);
+        data.products.forEach((product: Record<string, unknown>) => {
+          insertProduct.run(
+            product.name,
+            product.description,
+            product.unit_price,
+            product.unit_type,
+          );
         });
       }
 
@@ -334,11 +374,20 @@ ipcMain.on('import-data', (event, jsonData) => {
           INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, status, payment_terms, subtotal, total, notes, internal_memo, sent_at, paid_at, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         `);
-        data.invoices.forEach((invoice: any) => {
+        data.invoices.forEach((invoice: Record<string, unknown>) => {
           insertInvoice.run(
-            invoice.invoice_number, invoice.customer_id, invoice.issue_date, invoice.due_date, 
-            invoice.status, invoice.payment_terms, invoice.subtotal, invoice.total, 
-            invoice.notes, invoice.internal_memo, invoice.sent_at, invoice.paid_at
+            invoice.invoice_number,
+            invoice.customer_id,
+            invoice.issue_date,
+            invoice.due_date,
+            invoice.status,
+            invoice.payment_terms,
+            invoice.subtotal,
+            invoice.total,
+            invoice.notes,
+            invoice.internal_memo,
+            invoice.sent_at,
+            invoice.paid_at,
           );
         });
       }
@@ -348,10 +397,16 @@ ipcMain.on('import-data', (event, jsonData) => {
           INSERT INTO invoice_line_items (invoice_id, product_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `);
-        data.line_items.forEach((item: any) => {
+        data.line_items.forEach((item: Record<string, unknown>) => {
           insertLineItem.run(
-            item.invoice_id, item.product_id, item.product_name, item.description, 
-            item.unit_price, item.quantity, item.line_total, item.sort_order
+            item.invoice_id,
+            item.product_id,
+            item.product_name,
+            item.description,
+            item.unit_price,
+            item.quantity,
+            item.line_total,
+            item.sort_order,
           );
         });
       }
@@ -361,8 +416,14 @@ ipcMain.on('import-data', (event, jsonData) => {
           INSERT INTO email_logs (invoice_id, recipient_email, sent_at, status, error_message)
           VALUES (?, ?, ?, ?, ?)
         `);
-        data.email_logs.forEach((log: any) => {
-          insertEmailLog.run(log.invoice_id, log.recipient_email, log.sent_at, log.status, log.error_message);
+        data.email_logs.forEach((log: Record<string, unknown>) => {
+          insertEmailLog.run(
+            log.invoice_id,
+            log.recipient_email,
+            log.sent_at,
+            log.status,
+            log.error_message,
+          );
         });
       }
     })();
@@ -373,15 +434,15 @@ ipcMain.on('import-data', (event, jsonData) => {
   }
 });
 
-function createWindow () {
+function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: true
-    }
+      contextIsolation: true,
+    },
   });
 
   if (app.isPackaged) {
@@ -389,7 +450,7 @@ function createWindow () {
       path.join(__dirname, '../app/index.html'),
       path.join(__dirname, '../../app/index.html'),
       path.join(__dirname, '../../../dist/electron/app/index.html'),
-      path.join(__dirname, '../../dist/electron/app/index.html')
+      path.join(__dirname, '../../dist/electron/app/index.html'),
     ];
     let fileLoaded = false;
     for (const filePath of possiblePaths) {
@@ -411,13 +472,18 @@ function createWindow () {
     }
   } else {
     console.log('Loading development URL: http://localhost:5175');
-    win.loadURL('http://localhost:5175').then(() => {
-      console.log('Successfully loaded development URL');
-      win.webContents.openDevTools();
-    }).catch(err => {
-      console.error('Failed to load development URL:', err);
-      win.loadURL('data:text/html;charset=utf-8,<h1>Error: Could not connect to development server. Please ensure it is running on localhost:5175.</h1>');
-    });
+    win
+      .loadURL('http://localhost:5175')
+      .then(() => {
+        console.log('Successfully loaded development URL');
+        win.webContents.openDevTools();
+      })
+      .catch((err) => {
+        console.error('Failed to load development URL:', err);
+        win.loadURL(
+          'data:text/html;charset=utf-8,<h1>Error: Could not connect to development server. Please ensure it is running on localhost:5175.</h1>',
+        );
+      });
   }
 }
 

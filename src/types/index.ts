@@ -10,4 +10,6 @@ declare global {
   }
 }
 
+export type DbRow = Record<string, unknown>;
+
 export {};

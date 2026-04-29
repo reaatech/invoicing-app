@@ -1,8 +1,9 @@
 import React from 'react';
+import type { DbRow } from '../../types';
 import '../../types';
 interface ProductFormProps {
-    product?: any;
-    onClose: () => void;
+  product?: DbRow;
+  onClose: () => void;
 }
 declare const ProductForm: React.FC<ProductFormProps>;
 export default ProductForm;

@@ -13,7 +13,7 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography
+  Typography,
 } from '@mui/material';
 import { api } from '../../services/api';
 import { formatCurrency } from '../../utils/currency';
@@ -32,17 +32,33 @@ interface InvoiceFormProps {
 const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, onClose }) => {
   const [formData, setFormData] = useState({
     invoice_number: invoice ? String(invoice.invoice_number) : '',
-    customer_id: invoice ? String(invoice.customer_id) : (initialCustomerId ? String(initialCustomerId) : ''),
+    customer_id: invoice
+      ? String(invoice.customer_id)
+      : initialCustomerId
+        ? String(initialCustomerId)
+        : '',
     issue_date: invoice ? String(invoice.issue_date) : new Date().toISOString().split('T')[0],
     due_date: invoice ? String(invoice.due_date) : '',
     payment_terms: invoice ? String(invoice.payment_terms) : 'Net 30',
     notes: invoice ? String(invoice.notes) : '',
     internal_memo: invoice ? String(invoice.internal_memo) : '',
-    status: invoice ? String(invoice.status) : 'Draft'
+    status: invoice ? String(invoice.status) : 'Draft',
   });
-  const [lineItems, setLineItems] = useState<{ id: number | string; product_id?: string; product_name: string; description: string; unit_price: number; quantity: number; line_total: number }[]>(invoice ? [] : []);
+  const [lineItems, setLineItems] = useState<
+    {
+      id: number | string;
+      product_id?: string;
+      product_name: string;
+      description: string;
+      unit_price: number;
+      quantity: number;
+      line_total: number;
+    }[]
+  >(invoice ? [] : []);
   const [customers, setCustomers] = useState<{ id: number; name: string; email?: string }[]>([]);
-  const [products, setProducts] = useState<{ id: number; name: string; description: string; unit_price: number }[]>([]);
+  const [products, setProducts] = useState<
+    { id: number; name: string; description: string; unit_price: number }[]
+  >([]);
   const [subtotal, setSubtotal] = useState<number>(invoice ? Number(invoice.subtotal) : 0);
   const [total, setTotal] = useState<number>(invoice ? Number(invoice.total) : 0);
   const [pendingAttachments, setPendingAttachments] = useState<string[]>([]);
@@ -63,7 +79,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       formData.due_date !== '' &&
       formData.payment_terms.trim() !== '' &&
       lineItems.length > 0 &&
-      lineItems.every(item => item.product_name.trim() !== '' && item.quantity > 0 && item.unit_price >= 0)
+      lineItems.every(
+        (item) => item.product_name.trim() !== '' && item.quantity > 0 && item.unit_price >= 0,
+      )
     );
   };
 
@@ -71,14 +89,22 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
     if (!isElectronAvailable()) return;
 
     // Single global handler that won't accumulate
-    const globalFileHandler = (response: any) => {
-      if (!isSelectingFiles.current) return; // Ignore if not actively selecting
-      
+    const globalFileHandler = (response: unknown) => {
+      const r = response as Record<string, unknown>;
+      if (!isSelectingFiles.current) return;
+
       isSelectingFiles.current = false;
-      
-      if (response.success && !response.canceled && response.filePaths && response.filePaths.length > 0) {
-        setPendingAttachments(prev => [...prev, ...response.filePaths]);
-        toast.success(`${response.filePaths.length} file(s) selected`);
+
+      if (
+        r.success &&
+        !r.canceled &&
+        r.filePaths &&
+        Array.isArray(r.filePaths) &&
+        r.filePaths.length > 0
+      ) {
+        const paths = r.filePaths as string[];
+        setPendingAttachments((prev) => [...prev, ...paths]);
+        toast.success(`${paths.length} file(s) selected`);
       }
     };
 
@@ -94,27 +120,49 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       try {
         const [customerResponse, productResponse] = await Promise.all([
           api.query('SELECT id, name, email FROM customers', []),
-          api.query('SELECT id, name, description, unit_price FROM products', [])
+          api.query('SELECT id, name, description, unit_price FROM products', []),
         ]);
         if (customerResponse.success) {
-          setCustomers((customerResponse.data as { id: number; name: string; email?: string }[]) || []);
+          setCustomers(
+            (customerResponse.data as { id: number; name: string; email?: string }[]) || [],
+          );
         }
         if (productResponse.success) {
-          setProducts((productResponse.data as { id: number; name: string; description: string; unit_price: number }[]) || []);
+          setProducts(
+            (productResponse.data as {
+              id: number;
+              name: string;
+              description: string;
+              unit_price: number;
+            }[]) || [],
+          );
         }
 
         if (invoice) {
           const lineItemResponse = await api.query(
             'SELECT * FROM invoice_line_items WHERE invoice_id = ?',
-            [invoice.id]
+            [invoice.id],
           );
           if (lineItemResponse.success) {
-            setLineItems((lineItemResponse.data as { id: number; product_id?: string; product_name: string; description: string; unit_price: number; quantity: number; line_total: number }[]) || []);
+            setLineItems(
+              (lineItemResponse.data as {
+                id: number;
+                product_id?: string;
+                product_name: string;
+                description: string;
+                unit_price: number;
+                quantity: number;
+                line_total: number;
+              }[]) || [],
+            );
           }
         } else {
           const invoiceNumberResponse = await api.getNextInvoiceNumber();
           if (invoiceNumberResponse.success && invoiceNumberResponse.invoiceNumber) {
-            setFormData(prev => ({ ...prev, invoice_number: invoiceNumberResponse.invoiceNumber ?? '' }));
+            setFormData((prev) => ({
+              ...prev,
+              invoice_number: invoiceNumberResponse.invoiceNumber ?? '',
+            }));
           }
         }
       } catch (error) {
@@ -124,7 +172,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
     };
 
     if (!invoice && initialCustomerId) {
-      setFormData(prev => ({ ...prev, customer_id: String(initialCustomerId) }));
+      setFormData((prev) => ({ ...prev, customer_id: String(initialCustomerId) }));
     }
     void loadData();
   }, [invoice, initialCustomerId]);
@@ -137,27 +185,30 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       'Net 15': 15,
       'Net 30': 30,
       'Net 60': 60,
-      'Due on Receipt': 0
+      'Due on Receipt': 0,
     };
     const dueDays = termsToDays[formData.payment_terms] ?? 30;
     const issueDate = new Date(formData.issue_date);
     issueDate.setDate(issueDate.getDate() + dueDays);
-    setFormData(prev => ({ ...prev, due_date: issueDate.toISOString().split('T')[0] }));
+    setFormData((prev) => ({ ...prev, due_date: issueDate.toISOString().split('T')[0] }));
   }, [formData.issue_date, formData.payment_terms, invoice]);
-
-  useEffect(() => {
-    updateTotals();
-  }, [lineItems]);
 
   const updateTotals = () => {
     const newSubtotal = lineItems.reduce((sum, item) => sum + (Number(item.line_total) || 0), 0);
     setSubtotal(newSubtotal);
-    setTotal(newSubtotal); // Assuming no taxes or discounts for now
+    setTotal(newSubtotal);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    updateTotals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineItems]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const saveInvoice = async (): Promise<number | null> => {
@@ -169,23 +220,55 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       // Update existing invoice (only if draft)
       if (formData.status === 'Draft') {
         await api.query(
-          'UPDATE invoices SET invoice_number = ?, customer_id = ?, issue_date = ?, due_date = ?, status = ?, payment_terms = ?, subtotal = ?, total = ?, notes = ?, internal_memo = ?, updated_at = datetime(\'now\') WHERE id = ?',
-          [formData.invoice_number, formData.customer_id, formData.issue_date, formData.due_date, formData.status, formData.payment_terms, subtotal, total, formData.notes, formData.internal_memo, invoice.id]
+          "UPDATE invoices SET invoice_number = ?, customer_id = ?, issue_date = ?, due_date = ?, status = ?, payment_terms = ?, subtotal = ?, total = ?, notes = ?, internal_memo = ?, updated_at = datetime('now') WHERE id = ?",
+          [
+            formData.invoice_number,
+            formData.customer_id,
+            formData.issue_date,
+            formData.due_date,
+            formData.status,
+            formData.payment_terms,
+            subtotal,
+            total,
+            formData.notes,
+            formData.internal_memo,
+            invoice.id,
+          ],
         );
         // Update line items
-        await Promise.all(lineItems.map((item, index) => {
-          if (typeof item.id === 'number') {
-            return api.query(
-              'UPDATE invoice_line_items SET product_id = ?, product_name = ?, description = ?, unit_price = ?, quantity = ?, line_total = ?, sort_order = ? WHERE id = ?',
-              [item.product_id || null, item.product_name, item.description, item.unit_price, item.quantity, item.line_total, index, item.id]
-            );
-          } else {
-            return api.query(
-              'INSERT INTO invoice_line_items (invoice_id, product_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
-              [invoice.id, item.product_id || null, item.product_name, item.description, item.unit_price, item.quantity, item.line_total, index]
-            );
-          }
-        }));
+        await Promise.all(
+          lineItems.map((item, index) => {
+            if (typeof item.id === 'number') {
+              return api.query(
+                'UPDATE invoice_line_items SET product_id = ?, product_name = ?, description = ?, unit_price = ?, quantity = ?, line_total = ?, sort_order = ? WHERE id = ?',
+                [
+                  item.product_id || null,
+                  item.product_name,
+                  item.description,
+                  item.unit_price,
+                  item.quantity,
+                  item.line_total,
+                  index,
+                  item.id,
+                ],
+              );
+            } else {
+              return api.query(
+                "INSERT INTO invoice_line_items (invoice_id, product_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                [
+                  invoice.id,
+                  item.product_id || null,
+                  item.product_name,
+                  item.description,
+                  item.unit_price,
+                  item.quantity,
+                  item.line_total,
+                  index,
+                ],
+              );
+            }
+          }),
+        );
       } else {
         alert('Cannot edit invoice: Only draft invoices can be modified.');
         return null;
@@ -193,17 +276,44 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
     } else {
       // Add new invoice
       const response = await api.query(
-        'INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, status, payment_terms, subtotal, total, notes, internal_memo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
-        [formData.invoice_number, formData.customer_id, formData.issue_date, formData.due_date, formData.status, formData.payment_terms, subtotal, total, formData.notes, formData.internal_memo]
+        "INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, status, payment_terms, subtotal, total, notes, internal_memo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+        [
+          formData.invoice_number,
+          formData.customer_id,
+          formData.issue_date,
+          formData.due_date,
+          formData.status,
+          formData.payment_terms,
+          subtotal,
+          total,
+          formData.notes,
+          formData.internal_memo,
+        ],
       );
-      const newInvoiceId = response.success && response.data?.[0] && typeof (response.data[0] as { lastInsertRowid?: number }).lastInsertRowid === 'number'
-        ? (response.data[0] as { lastInsertRowid: number }).lastInsertRowid
-        : null;
+      const newInvoiceId =
+        response.success &&
+        response.data?.[0] &&
+        typeof (response.data[0] as { lastInsertRowid?: number }).lastInsertRowid === 'number'
+          ? (response.data[0] as { lastInsertRowid: number }).lastInsertRowid
+          : null;
       if (newInvoiceId) {
-        await Promise.all(lineItems.map((item, index) => api.query(
-          'INSERT INTO invoice_line_items (invoice_id, product_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
-          [newInvoiceId, item.product_id || null, item.product_name, item.description, item.unit_price, item.quantity, item.line_total, index]
-        )));
+        await Promise.all(
+          lineItems.map((item, index) =>
+            api.query(
+              "INSERT INTO invoice_line_items (invoice_id, product_id, product_name, description, unit_price, quantity, line_total, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+              [
+                newInvoiceId,
+                item.product_id || null,
+                item.product_name,
+                item.description,
+                item.unit_price,
+                item.quantity,
+                item.line_total,
+                index,
+              ],
+            ),
+          ),
+        );
       }
       return newInvoiceId;
     }
@@ -227,17 +337,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
     }
     await uploadPendingAttachments(savedId, false);
     setPendingAttachments([]);
-    
-    const selectedCustomer = customers.find(c => c.id === Number(formData.customer_id));
+
+    const selectedCustomer = customers.find((c) => c.id === Number(formData.customer_id));
     if (!selectedCustomer?.email) {
       toast.error('Selected customer does not have an email address.');
       return;
     }
-    
+
     const toastId = toast.loading('Sending invoice...');
     const sendResponse = await api.sendInvoice(savedId, selectedCustomer.email);
     toast.dismiss(toastId);
-    
+
     if (sendResponse.success) {
       toast.success('Invoice sent successfully!');
       setTimeout(() => onClose(), 1000); // Delay close so user sees the message
@@ -249,30 +359,31 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
   const handleSelectAttachments = () => {
     if (isSelectingFiles.current) return;
     isSelectingFiles.current = true;
-    
+
     safeElectronAPI.sendMessage('show-open-dialog', {
       title: 'Select files to attach',
-      filters: []
+      filters: [],
     });
   };
 
   const handleRemoveAttachment = (filePath: string) => {
-    setPendingAttachments(prev => prev.filter(p => p !== filePath));
+    setPendingAttachments((prev) => prev.filter((p) => p !== filePath));
   };
 
   const uploadPendingAttachments = async (invoiceId: number, showToast = false) => {
     if (pendingAttachments.length === 0) return;
 
     const count = pendingAttachments.length;
-    
-    const uploadPromises = pendingAttachments.map(filePath => {
+
+    const uploadPromises = pendingAttachments.map((filePath) => {
       return new Promise<void>((resolve, reject) => {
-        const handleResponse = (response: any) => {
+        const handleResponse = (response: unknown) => {
+          const r = response as Record<string, unknown>;
           safeElectronAPI.removeMessage('upload-attachment-response', handleResponse);
-          if (response.success) {
+          if (r.success) {
             resolve();
           } else {
-            reject(new Error(response.error));
+            reject(new Error(String(r.error)));
           }
         };
 
@@ -286,44 +397,56 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       if (showToast && count > 0) {
         toast.success(`${count} file(s) attached`);
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to attach some files');
     }
   };
 
   const handleAddLineItem = () => {
-    setLineItems([...lineItems, { id: Date.now(), product_name: '', description: '', unit_price: 0, quantity: 1, line_total: 0 }]);
+    setLineItems([
+      ...lineItems,
+      {
+        id: Date.now(),
+        product_name: '',
+        description: '',
+        unit_price: 0,
+        quantity: 1,
+        line_total: 0,
+      },
+    ]);
   };
 
   const handleRemoveLineItem = (id: number | string) => {
-    setLineItems(lineItems.filter(item => item.id !== id));
+    setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
   const handleLineItemChange = (id: number | string, field: string, value: string | number) => {
-    setLineItems(lineItems.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
-        if (field === 'unit_price' || field === 'quantity') {
-          const unitPrice = Number(updatedItem.unit_price) || 0;
-          const quantity = Number(updatedItem.quantity) || 0;
-          updatedItem.unit_price = unitPrice;
-          updatedItem.quantity = quantity;
-          updatedItem.line_total = unitPrice * quantity;
-        }
-        if (field === 'product_id' && value) {
-          const selectedProduct = products.find(p => p.id === Number(value));
-          if (selectedProduct) {
-            const unitPrice = Number(selectedProduct.unit_price) || 0;
-            updatedItem.product_name = selectedProduct.name;
-            updatedItem.description = selectedProduct.description;
+    setLineItems(
+      lineItems.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          if (field === 'unit_price' || field === 'quantity') {
+            const unitPrice = Number(updatedItem.unit_price) || 0;
+            const quantity = Number(updatedItem.quantity) || 0;
             updatedItem.unit_price = unitPrice;
-            updatedItem.line_total = unitPrice * (Number(updatedItem.quantity) || 0);
+            updatedItem.quantity = quantity;
+            updatedItem.line_total = unitPrice * quantity;
           }
+          if (field === 'product_id' && value) {
+            const selectedProduct = products.find((p) => p.id === Number(value));
+            if (selectedProduct) {
+              const unitPrice = Number(selectedProduct.unit_price) || 0;
+              updatedItem.product_name = selectedProduct.name;
+              updatedItem.description = selectedProduct.description;
+              updatedItem.unit_price = unitPrice;
+              updatedItem.line_total = unitPrice * (Number(updatedItem.quantity) || 0);
+            }
+          }
+          return updatedItem;
         }
-        return updatedItem;
-      }
-      return item;
-    }));
+        return item;
+      }),
+    );
   };
 
   return (
@@ -331,7 +454,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       <DialogTitle>{invoice ? 'Edit Invoice' : 'Add New Invoice'}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
-          <Box display="grid" gap={2} gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }} mb={3}>
+          <Box
+            display="grid"
+            gap={2}
+            gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+            mb={3}
+          >
             <TextField
               label="Invoice Number"
               name="invoice_number"
@@ -350,8 +478,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
               disabled={Boolean(invoice && formData.status !== 'Draft')}
             >
               <MenuItem value="">Select Customer</MenuItem>
-              {customers.map(cust => (
-                <MenuItem key={cust.id} value={String(cust.id)}>{cust.name}</MenuItem>
+              {customers.map((cust) => (
+                <MenuItem key={cust.id} value={String(cust.id)}>
+                  {cust.name}
+                </MenuItem>
               ))}
             </TextField>
             <TextField
@@ -422,7 +552,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                 </TableHead>
                 <TableBody>
                   {lineItems.length > 0 ? (
-                    lineItems.map(item => (
+                    lineItems.map((item) => (
                       <TableRow key={item.id} hover>
                         <TableCell>
                           <Box display="flex" flexDirection="column" gap={1}>
@@ -430,17 +560,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                               select
                               size="small"
                               value={item.product_id || ''}
-                              onChange={(e) => handleLineItemChange(item.id, 'product_id', e.target.value)}
+                              onChange={(e) =>
+                                handleLineItemChange(item.id, 'product_id', e.target.value)
+                              }
                             >
                               <MenuItem value="">Custom Item</MenuItem>
-                              {products.map(prod => (
-                                <MenuItem key={prod.id} value={String(prod.id)}>{prod.name}</MenuItem>
+                              {products.map((prod) => (
+                                <MenuItem key={prod.id} value={String(prod.id)}>
+                                  {prod.name}
+                                </MenuItem>
                               ))}
                             </TextField>
                             <TextField
                               size="small"
                               value={item.product_name}
-                              onChange={(e) => handleLineItemChange(item.id, 'product_name', e.target.value)}
+                              onChange={(e) =>
+                                handleLineItemChange(item.id, 'product_name', e.target.value)
+                              }
                               placeholder="Item Name"
                             />
                           </Box>
@@ -449,7 +585,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                           <TextField
                             size="small"
                             value={item.description}
-                            onChange={(e) => handleLineItemChange(item.id, 'description', e.target.value)}
+                            onChange={(e) =>
+                              handleLineItemChange(item.id, 'description', e.target.value)
+                            }
                           />
                         </TableCell>
                         <TableCell>
@@ -457,7 +595,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                             size="small"
                             type="number"
                             value={item.unit_price}
-                            onChange={(e) => handleLineItemChange(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              handleLineItemChange(
+                                item.id,
+                                'unit_price',
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
                           />
                         </TableCell>
                         <TableCell>
@@ -465,14 +609,20 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                             size="small"
                             type="number"
                             value={item.quantity}
-                            onChange={(e) => handleLineItemChange(item.id, 'quantity', parseInt(e.target.value, 10) || 1)}
+                            onChange={(e) =>
+                              handleLineItemChange(
+                                item.id,
+                                'quantity',
+                                parseInt(e.target.value, 10) || 1,
+                              )
+                            }
                           />
                         </TableCell>
                         <TableCell>{formatCurrency(item.line_total)}</TableCell>
                         <TableCell align="right">
-                          <Button 
-                            color="error" 
-                            size="small" 
+                          <Button
+                            color="error"
+                            size="small"
                             onClick={() => handleRemoveLineItem(item.id)}
                             sx={{ minWidth: 'auto', p: 0.5 }}
                           >
@@ -498,7 +648,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
             </Box>
           </Box>
 
-          <Box display="grid" gap={2} gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }} mb={2}>
+          <Box
+            display="grid"
+            gap={2}
+            gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+            mb={2}
+          >
             <TextField
               label="Notes (Visible on Invoice)"
               name="notes"
@@ -520,7 +675,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
 
           {invoice ? (
             <Box mb={2}>
-              <InvoiceAttachments invoiceId={Number(invoice.id)} readOnly={formData.status !== 'Draft'} />
+              <InvoiceAttachments
+                invoiceId={Number(invoice.id)}
+                readOnly={formData.status !== 'Draft'}
+              />
             </Box>
           ) : (
             <Box mb={2}>
@@ -560,7 +718,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                       </Button>
                     </Box>
                   ))}
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
                     {pendingAttachments.length} file(s) will be attached when invoice is saved
                   </Typography>
                 </Box>
@@ -569,11 +731,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={onClose} color="inherit">Cancel</Button>
-          <Button type="submit" variant="outlined">Save Draft</Button>
-          <Button 
-            type="button" 
-            onClick={handleSendNow} 
+          <Button onClick={onClose} color="inherit">
+            Cancel
+          </Button>
+          <Button type="submit" variant="outlined">
+            Save Draft
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSendNow}
             variant="contained"
             disabled={!isFormValid()}
           >

@@ -9,6 +9,7 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 ## Features
 
 ### Core Functionality
+
 - **Invoice Management**: Create, edit, duplicate, and manage invoices with line items
 - **Customer Management**: Full CRUD operations for customer records with contact details
 - **Product Management**: Manage product catalog with pricing and descriptions
@@ -17,12 +18,14 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 - **Soft Delete**: Canceled and deleted invoices are preserved for audit purposes
 
 ### Automation & Communication
+
 - **Email Delivery**: Send invoices via SMTP with customizable templates
 - **PDF Generation**: Automatic PDF generation using Puppeteer and Mustache templates
 - **BCC to Company**: Automatically BCC company email on all invoice sends
 - **Automatic Status Updates**: Invoices automatically marked as Overdue when past due date
 
 ### Analytics & Reporting
+
 - **Dashboard**: Real-time statistics for revenue, outstanding invoices, and totals
 - **Revenue Trends**: 6-month revenue history with line charts
 - **Status Breakdown**: Visual pie chart of invoice status distribution
@@ -30,12 +33,14 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 - **Date Range Filtering**: Filter dashboard data by custom date ranges
 
 ### Data Management
+
 - **Bulk Actions**: Mark multiple invoices as paid, cancel, or delete in bulk
 - **Data Export/Import**: Export and import application data for backup or migration
 - **Backup Reminders**: Automatic reminders to backup your data
 - **Search & Filter**: Search and filter across invoices, customers, and products
 
 ### User Experience
+
 - **Dark Mode**: Full dark mode support with system preference detection
 - **Form Validation**: All forms validate required fields before submission
 - **Responsive Design**: Optimized layout for different screen sizes
@@ -44,6 +49,7 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 ## Tech Stack
 
 ### Frontend
+
 - **React 19** with TypeScript for type-safe UI development
 - **Material-UI (MUI)** for component library and design system
 - **Tailwind CSS** for utility-first styling with dark mode
@@ -53,6 +59,7 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 - **React Hot Toast** for notifications
 
 ### Backend & Desktop
+
 - **Electron 40** for cross-platform desktop application
 - **SQLite** with `better-sqlite3` for local database
 - **Nodemailer** for SMTP email delivery
@@ -60,6 +67,7 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 - **Mustache.js** for email and PDF templates
 
 ### Build Tools
+
 - **Vite** for fast development and optimized production builds
 - **TypeScript** for type safety across the entire codebase
 - **Electron Builder** for packaging and distribution
@@ -68,6 +76,7 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/reaatech/invoicing-app.git
    cd invoicing-app
@@ -85,6 +94,7 @@ See the [release files](https://github.com/reaatech/invoicing-app/releases) for 
 To run the application in development mode with hot-reload:
 
 1. Start the Vite development server:
+
    ```bash
    npm run dev
    ```
@@ -107,6 +117,7 @@ npm run build:electron
 ```
 
 This command will:
+
 1. Compile TypeScript files for Electron main process
 2. Build the React frontend with Vite
 3. Copy necessary files (migrations, templates)
@@ -140,6 +151,7 @@ npm run build:electron -- --linux
 ```
 
 **Windows/Linux Support**: While the codebase includes configurations for Windows and Linux builds, these platforms have not been tested. You may need to:
+
 - Add platform-specific icons (`public/icon.ico` for Windows, `public/icon.png` for Linux)
 - Test and adjust file paths and system-specific features
 - Verify database and file system operations work correctly
@@ -157,6 +169,7 @@ The output will be in the `dist/` directory.
 ## Usage
 
 ### Initial Setup
+
 1. Launch the application
 2. Navigate to **Settings** and configure:
    - Company information (name, address, email, phone)
@@ -166,6 +179,7 @@ The output will be in the `dist/` directory.
 4. Add your customers with contact information
 
 ### Creating and Sending Invoices
+
 1. Click **Create New Invoice** from the dashboard or Invoices page
 2. Select a customer and add line items from your product catalog
 3. Attach files if needed (PDFs, images, etc.)
@@ -174,6 +188,7 @@ The output will be in the `dist/` directory.
    - **Send Now**: Immediately send via email with PDF attachment
 
 ### Managing Invoices
+
 - **Edit**: Only Draft invoices can be edited
 - **Send/Resend**: Send or resend invoices to customers
 - **Mark Paid**: Update invoice status when payment received
@@ -183,13 +198,16 @@ The output will be in the `dist/` directory.
 - **Download PDF**: Generate and download invoice PDF
 
 ### Bulk Operations
+
 Select multiple invoices to:
+
 - Mark as Paid
 - Cancel multiple invoices
 - Delete Draft/Cancelled invoices
 - Export selected invoices
 
 ### Data Management
+
 - **Export Data**: Backup all data to JSON file
 - **Import Data**: Restore from backup file
 - **Backup Reminders**: App reminds you to backup regularly

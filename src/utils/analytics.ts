@@ -35,7 +35,6 @@ export const calculateCustomerAnalytics = (invoices: InvoiceRecord[]): CustomerA
   const statusCounts: Record<string, number> = {};
   let paidTotal = 0;
   let outstandingAmount = 0;
-  let totalRevenue = 0;
   let totalAmount = 0;
   let paidCount = 0;
   let totalDaysToPay = 0;
@@ -48,7 +47,6 @@ export const calculateCustomerAnalytics = (invoices: InvoiceRecord[]): CustomerA
     totalAmount += total;
 
     if (status === 'Paid') {
-      totalRevenue += total;
       paidTotal += total;
       paidCount += 1;
       const daysToPay = calculateDaysBetween(invoice.issue_date, invoice.paid_at);
@@ -77,7 +75,7 @@ export const calculateCustomerAnalytics = (invoices: InvoiceRecord[]): CustomerA
     averageInvoiceAmount,
     averageDaysToPay,
     onTimePaymentRate,
-    statusCounts
+    statusCounts,
   };
 };
 

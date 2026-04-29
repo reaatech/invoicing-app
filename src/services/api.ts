@@ -3,11 +3,14 @@
 import { isElectronAvailable, safeElectronAPI } from '../utils/electron-api';
 import '../types';
 
-const pendingDbRequests = new Map<string, {
-  resolve: (value: { success: boolean; data?: unknown[]; error?: string }) => void;
-  reject: (reason: { success: boolean; error?: string }) => void;
-  timeoutId: ReturnType<typeof setTimeout>;
-}>();
+const pendingDbRequests = new Map<
+  string,
+  {
+    resolve: (value: { success: boolean; data?: unknown[]; error?: string }) => void;
+    reject: (reason: { success: boolean; error?: string }) => void;
+    timeoutId: ReturnType<typeof setTimeout>;
+  }
+>();
 
 let dbListenerInitialized = false;
 
@@ -32,7 +35,10 @@ const ensureDbListener = () => {
 };
 
 export const api = {
-  query: (sql: string, params: unknown[] = []): Promise<{ success: boolean; data?: unknown[]; error?: string }> => {
+  query: (
+    sql: string,
+    params: unknown[] = [],
+  ): Promise<{ success: boolean; data?: unknown[]; error?: string }> => {
     return new Promise((resolve, reject) => {
       ensureDbListener();
       const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -61,7 +67,10 @@ export const api = {
     });
   },
 
-  sendInvoice: (invoiceId: number, recipientEmail: string): Promise<{ success: boolean; error?: string }> => {
+  sendInvoice: (
+    invoiceId: number,
+    recipientEmail: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     return new Promise((resolve, reject) => {
       if (!isElectronAvailable()) {
         reject(new Error('Electron IPC is not available. Send invoices from the desktop app.'));
@@ -81,7 +90,10 @@ export const api = {
     });
   },
 
-  generatePDF: (invoiceData: unknown, outputPath: string): Promise<{ success: boolean; path?: string; error?: string }> => {
+  generatePDF: (
+    invoiceData: unknown,
+    outputPath: string,
+  ): Promise<{ success: boolean; path?: string; error?: string }> => {
     return new Promise((resolve, reject) => {
       const handler = (response: unknown) => {
         clearTimeout(timeoutId);
@@ -129,7 +141,11 @@ export const api = {
     });
   },
 
-  getNextInvoiceNumber: (): Promise<{ success: boolean; invoiceNumber?: string; error?: string }> => {
+  getNextInvoiceNumber: (): Promise<{
+    success: boolean;
+    invoiceNumber?: string;
+    error?: string;
+  }> => {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         safeElectronAPI.removeMessage('invoice-number-response', handler);
@@ -143,5 +159,5 @@ export const api = {
       };
       safeElectronAPI.onMessage('invoice-number-response', handler);
     });
-  }
+  },
 };

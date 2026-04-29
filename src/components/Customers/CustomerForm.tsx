@@ -8,13 +8,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField
+  TextField,
 } from '@mui/material';
 import { api } from '../../services/api';
+import type { DbRow } from '../../types';
 import '../../types';
 
 interface CustomerFormProps {
-  customer?: any; // For edit mode, pass existing customer data
+  customer?: DbRow;
   onClose: () => void;
 }
 
@@ -22,12 +23,18 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const isDirtyRef = useRef(isDirty);
-  isDirtyRef.current = isDirty;
-  
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+  }, [isDirty]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isDirtyRef.current && !window.confirm('You have unsaved changes. Are you sure you want to close?')) {
+        if (
+          isDirtyRef.current &&
+          !window.confirm('You have unsaved changes. Are you sure you want to close?')
+        ) {
           return;
         }
         onClose();
@@ -36,18 +43,18 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
-  
+
   const [formData, setFormData] = useState({
-    name: customer ? customer.name : '',
-    email: customer ? customer.email : '',
-    billing_address: customer ? customer.billing_address : '',
-    phone: customer ? customer.phone : '',
-    notes: customer ? customer.notes : ''
+    name: customer ? String(customer.name || '') : '',
+    email: customer ? String(customer.email || '') : '',
+    billing_address: customer ? String(customer.billing_address || '') : '',
+    phone: customer ? String(customer.phone || '') : '',
+    notes: customer ? String(customer.notes || '') : '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setIsDirty(true);
   };
 
@@ -64,29 +71,41 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email) {
       toast.error('Name and email are required');
       return;
     }
-    
-    // Email validation
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error('Please enter a valid email address');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await api.query(
         customer
-          ? 'UPDATE customers SET name = ?, email = ?, billing_address = ?, phone = ?, notes = ?, updated_at = datetime(\'now\') WHERE id = ?'
-          : 'INSERT INTO customers (name, email, billing_address, phone, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
+          ? "UPDATE customers SET name = ?, email = ?, billing_address = ?, phone = ?, notes = ?, updated_at = datetime('now') WHERE id = ?"
+          : "INSERT INTO customers (name, email, billing_address, phone, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
         customer
-          ? [formData.name, formData.email, formData.billing_address, formData.phone, formData.notes, customer.id]
-          : [formData.name, formData.email, formData.billing_address, formData.phone, formData.notes]
+          ? [
+              formData.name,
+              formData.email,
+              formData.billing_address,
+              formData.phone,
+              formData.notes,
+              customer.id,
+            ]
+          : [
+              formData.name,
+              formData.email,
+              formData.billing_address,
+              formData.phone,
+              formData.notes,
+            ],
       );
       setIsSubmitting(false);
       if (response.success) {
@@ -96,7 +115,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
       } else {
         toast.error('Failed to save customer: ' + (response.error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (_error) {
       setIsSubmitting(false);
       toast.error('An error occurred while saving');
     }
@@ -165,7 +184,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
           <Button onClick={handleDialogClose} disabled={isSubmitting} color="inherit">
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting || !isFormValid()} startIcon={isSubmitting ? <CircularProgress size={16} /> : undefined}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting || !isFormValid()}
+            startIcon={isSubmitting ? <CircularProgress size={16} /> : undefined}
+          >
             {isSubmitting ? 'Saving...' : (customer ? 'Update' : 'Add') + ' Customer'}
           </Button>
         </DialogActions>

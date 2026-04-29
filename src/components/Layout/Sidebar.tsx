@@ -1,14 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, FileText, Users, Package, Settings } from 'lucide-react';
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText
-} from '@mui/material';
+import { Box, Drawer, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 
 const Sidebar: React.FC = () => {
   const navItems = [
@@ -16,7 +9,7 @@ const Sidebar: React.FC = () => {
     { to: '/invoices', label: 'Invoices', icon: <FileText className="h-5 w-5" /> },
     { to: '/customers', label: 'Customers', icon: <Users className="h-5 w-5" /> },
     { to: '/products', label: 'Products', icon: <Package className="h-5 w-5" /> },
-    { to: '/settings', label: 'Settings', icon: <Settings className="h-5 w-5" /> }
+    { to: '/settings', label: 'Settings', icon: <Settings className="h-5 w-5" /> },
   ];
 
   return (
@@ -27,21 +20,14 @@ const Sidebar: React.FC = () => {
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: 240,
-          boxSizing: 'border-box'
-        }
+          boxSizing: 'border-box',
+        },
       }}
     >
       <List sx={{ px: 1.5, py: 1 }}>
         {navItems.map((item) => (
-          <ListItem
-            key={item.to}
-            disablePadding
-            sx={{ mb: 0.5 }}
-          >
-            <NavLink
-              to={item.to}
-              style={{ textDecoration: 'none', width: '100%' }}
-            >
+          <ListItem key={item.to} disablePadding sx={{ mb: 0.5 }}>
+            <NavLink to={item.to} style={{ textDecoration: 'none', width: '100%' }}>
               {({ isActive }) => (
                 <Box
                   display="flex"
@@ -55,13 +41,11 @@ const Sidebar: React.FC = () => {
                   sx={{
                     transition: 'all 150ms ease',
                     '&:hover': {
-                      bgcolor: isActive ? 'primary.dark' : 'action.hover'
-                    }
+                      bgcolor: isActive ? 'primary.dark' : 'action.hover',
+                    },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>
-                    {item.icon}
-                  </ListItemIcon>
+                  <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.label} />
                 </Box>
               )}

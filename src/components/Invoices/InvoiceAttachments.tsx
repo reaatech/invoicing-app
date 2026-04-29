@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, IconButton, List, ListItem, ListItemText, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { Paperclip, Trash2, Upload } from 'lucide-react';
 import { safeElectronAPI } from '../../utils/electron-api';
 import { api } from '../../services/api';
@@ -27,10 +36,14 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
 
   useEffect(() => {
     loadAttachments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoiceId]);
 
   const loadAttachments = async () => {
-    const response = await api.query('SELECT * FROM invoice_attachments WHERE invoice_id = ? ORDER BY created_at', [invoiceId]);
+    const response = await api.query(
+      'SELECT * FROM invoice_attachments WHERE invoice_id = ? ORDER BY created_at',
+      [invoiceId],
+    );
     if (response.success && response.data) {
       setAttachments(response.data as Attachment[]);
     }
@@ -40,30 +53,37 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
     if (isSelectingFiles.current) return;
     isSelectingFiles.current = true;
 
-    const handleResponse = (response: any) => {
+    const handleResponse = (response: unknown) => {
+      const r = response as Record<string, unknown>;
       isSelectingFiles.current = false;
       safeElectronAPI.removeMessage('show-open-dialog-response', handleResponse);
-      if (response.success && !response.canceled && response.filePaths && response.filePaths.length > 0) {
-        uploadFiles(response.filePaths);
+      if (
+        r.success &&
+        !r.canceled &&
+        r.filePaths &&
+        Array.isArray(r.filePaths) &&
+        r.filePaths.length > 0
+      ) {
+        uploadFiles(r.filePaths as string[]);
       }
     };
 
     safeElectronAPI.onMessage('show-open-dialog-response', handleResponse);
     safeElectronAPI.sendMessage('show-open-dialog', {
       title: 'Select files to attach',
-      filters: []
+      filters: [],
     });
   };
 
   const uploadFiles = async (filePaths: string[]) => {
     setIsUploading(true);
-    const uploadPromises = filePaths.map(filePath => uploadFile(filePath));
-    
+    const uploadPromises = filePaths.map((filePath) => uploadFile(filePath));
+
     try {
       await Promise.all(uploadPromises);
       toast.success(`${filePaths.length} file(s) attached successfully`);
       loadAttachments();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to attach some files');
     } finally {
       setIsUploading(false);
@@ -72,12 +92,13 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
 
   const uploadFile = (filePath: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const handleResponse = (response: any) => {
+      const handleResponse = (response: unknown) => {
+        const r = response as Record<string, unknown>;
         safeElectronAPI.removeMessage('upload-attachment-response', handleResponse);
-        if (response.success) {
+        if (r.success) {
           resolve();
         } else {
-          reject(new Error(response.error));
+          reject(new Error(String(r.error)));
         }
       };
 
@@ -93,9 +114,10 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
 
     safeElectronAPI.sendMessage('delete-attachment', attachmentId);
 
-    const handleResponse = (response: any) => {
+    const handleResponse = (response: unknown) => {
+      const r = response as Record<string, unknown>;
       safeElectronAPI.removeMessage('delete-attachment-response', handleResponse);
-      if (response.success) {
+      if (r.success) {
         toast.success('Attachment removed');
         loadAttachments();
       } else {
@@ -146,7 +168,9 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
                   <IconButton
                     edge="end"
                     size="small"
-                    onClick={() => handleDeleteAttachment(attachment.id, attachment.original_filename)}
+                    onClick={() =>
+                      handleDeleteAttachment(attachment.id, attachment.original_filename)
+                    }
                     color="error"
                   >
                     <Trash2 className="h-4 w-4" />

@@ -1,16 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Paper,
-  Tab,
-  Tabs,
-  Typography
-} from '@mui/material';
+import { Box, Button, Chip, Divider, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { ArrowLeft, Mail, Plus, Trash2, UserCog, Users } from 'lucide-react';
@@ -23,6 +14,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { calculateCustomerAnalytics } from '../../utils/analytics';
 import { downloadExportedData } from '../../utils/export';
 import { getStatusCssColor } from '../../utils/invoice-status';
+import type { DbRow } from '../../types';
 
 interface CustomerRecord {
   id: number;
@@ -53,7 +45,10 @@ const CustomerView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [tabIndex, setTabIndex] = useState(0);
   const [showForm, setShowForm] = useState(false);
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ page: 0, pageSize: 10 });
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
 
   const customerId = useMemo(() => Number(id), [id]);
   const analytics = useMemo(() => calculateCustomerAnalytics(invoices), [invoices]);
@@ -67,7 +62,9 @@ const CustomerView: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const customerResponse = await api.query('SELECT * FROM customers WHERE id = ?', [customerId]);
+      const customerResponse = await api.query('SELECT * FROM customers WHERE id = ?', [
+        customerId,
+      ]);
       if (!customerResponse.success || !customerResponse.data?.length) {
         setCustomer(null);
         setInvoices([]);
@@ -77,7 +74,7 @@ const CustomerView: React.FC = () => {
       setCustomer(customerRecord);
       const invoiceResponse = await api.query(
         'SELECT * FROM invoices WHERE customer_id = ? ORDER BY issue_date DESC',
-        [customerId]
+        [customerId],
       );
       setInvoices((invoiceResponse.success ? (invoiceResponse.data as InvoiceRecord[]) : []) || []);
     } catch (error) {
@@ -92,6 +89,7 @@ const CustomerView: React.FC = () => {
 
   useEffect(() => {
     void loadCustomer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId]);
 
   const handleCloseForm = () => {
@@ -103,13 +101,25 @@ const CustomerView: React.FC = () => {
     if (!customer) {
       return;
     }
-    const invoiceCheck = await api.query('SELECT COUNT(*) as count FROM invoices WHERE customer_id = ?', [customer.id]);
-    const invoiceCount = invoiceCheck.success && invoiceCheck.data?.length ? (invoiceCheck.data[0] as any).count : 0;
+    const invoiceCheck = await api.query(
+      'SELECT COUNT(*) as count FROM invoices WHERE customer_id = ?',
+      [customer.id],
+    );
+    const invoiceCount =
+      invoiceCheck.success && invoiceCheck.data?.length
+        ? ((invoiceCheck.data[0] as DbRow).count as number)
+        : 0;
     if (invoiceCount > 0) {
-      alert(`Cannot delete this customer: ${invoiceCount} invoice(s) are associated with them. Delete or reassign the invoices first.`);
+      alert(
+        `Cannot delete this customer: ${invoiceCount} invoice(s) are associated with them. Delete or reassign the invoices first.`,
+      );
       return;
     }
-    if (!window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this customer? This action cannot be undone.',
+      )
+    ) {
       return;
     }
     const response = await api.query('DELETE FROM customers WHERE id = ?', [customer.id]);
@@ -126,9 +136,12 @@ const CustomerView: React.FC = () => {
     }
     const exportData = {
       customer,
-      invoices
+      invoices,
     };
-    downloadExportedData(JSON.stringify(exportData, null, 2), `customer-${customer.id}-export.json`);
+    downloadExportedData(
+      JSON.stringify(exportData, null, 2),
+      `customer-${customer.id}-export.json`,
+    );
   };
 
   if (isLoading) {
@@ -163,7 +176,7 @@ const CustomerView: React.FC = () => {
         <Button variant="text" onClick={() => navigate(`/invoices/${params.row.id}`)}>
           {params.value}
         </Button>
-      )
+      ),
     },
     { field: 'issue_date', headerName: 'Issue Date', flex: 1, minWidth: 140 },
     { field: 'due_date', headerName: 'Due Date', flex: 1, minWidth: 140 },
@@ -173,16 +186,20 @@ const CustomerView: React.FC = () => {
       flex: 1,
       minWidth: 120,
       renderCell: (params) => (
-        <Chip label={params.value} sx={{ bgcolor: getStatusCssColor(params.value), color: '#fff' }} size="small" />
-      )
+        <Chip
+          label={params.value}
+          sx={{ bgcolor: getStatusCssColor(params.value), color: '#fff' }}
+          size="small"
+        />
+      ),
     },
     {
       field: 'total',
       headerName: 'Total',
       flex: 1,
       minWidth: 120,
-      renderCell: (params) => formatCurrency(params.row.total)
-    }
+      renderCell: (params) => formatCurrency(params.row.total),
+    },
   ];
 
   return (
@@ -191,20 +208,38 @@ const CustomerView: React.FC = () => {
         items={[
           { label: 'Home', to: '/' },
           { label: 'Customers', to: '/customers' },
-          { label: customer.name }
+          { label: customer.name },
         ]}
       />
       <Paper sx={{ p: 3 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2} mb={3}>
+        <Box
+          display="flex"
+          flexDirection={{ xs: 'column', md: 'row' }}
+          justifyContent="space-between"
+          gap={2}
+          mb={3}
+        >
           <Box>
-            <Typography variant="h4" fontWeight={700}>{customer.name}</Typography>
-            <Typography variant="body2" color="text.secondary">{customer.email || 'No email'}</Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {customer.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {customer.email || 'No email'}
+            </Typography>
           </Box>
           <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="center">
-            <Button variant="outlined" startIcon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate('/customers')}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => navigate('/customers')}
+            >
               Back
             </Button>
-            <Button variant="outlined" startIcon={<UserCog className="h-4 w-4" />} onClick={() => setShowForm(true)}>
+            <Button
+              variant="outlined"
+              startIcon={<UserCog className="h-4 w-4" />}
+              onClick={() => setShowForm(true)}
+            >
               Edit
             </Button>
             <Button
@@ -214,7 +249,9 @@ const CustomerView: React.FC = () => {
             >
               New Invoice
             </Button>
-            <Button variant="outlined" onClick={handleExportCustomer}>Export</Button>
+            <Button variant="outlined" onClick={handleExportCustomer}>
+              Export
+            </Button>
             <Button
               variant="outlined"
               color="error"
@@ -247,31 +284,53 @@ const CustomerView: React.FC = () => {
           <Box display="flex" flexDirection="column" gap={3}>
             <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3}>
               <Paper sx={{ p: 2.5 }}>
-                <Typography variant="subtitle1" fontWeight={600} mb={1}>Customer Info</Typography>
+                <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                  Customer Info
+                </Typography>
                 <Typography variant="body2">Phone: {customer.phone || '—'}</Typography>
-                <Typography variant="body2">Billing Address: {customer.billing_address || '—'}</Typography>
+                <Typography variant="body2">
+                  Billing Address: {customer.billing_address || '—'}
+                </Typography>
                 <Typography variant="body2">Notes: {customer.notes || '—'}</Typography>
                 <Typography variant="body2">Created: {customer.created_at || '—'}</Typography>
                 <Typography variant="body2">Updated: {customer.updated_at || '—'}</Typography>
               </Paper>
               <Paper sx={{ p: 2.5 }}>
-                <Typography variant="subtitle1" fontWeight={600} mb={2}>Quick Stats</Typography>
+                <Typography variant="subtitle1" fontWeight={600} mb={2}>
+                  Quick Stats
+                </Typography>
                 <Box display="grid" gridTemplateColumns={{ xs: '1fr 1fr', md: '1fr 1fr' }} gap={2}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">Total Invoices</Typography>
-                    <Typography variant="h6" fontWeight={700}>{analytics.totalInvoices}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Total Invoices
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {analytics.totalInvoices}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">Total Revenue</Typography>
-                    <Typography variant="h6" fontWeight={700}>{formatCurrency(analytics.totalRevenue)}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Total Revenue
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {formatCurrency(analytics.totalRevenue)}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">Outstanding</Typography>
-                    <Typography variant="h6" fontWeight={700}>{formatCurrency(analytics.outstandingAmount)}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Outstanding
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {formatCurrency(analytics.outstandingAmount)}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">Avg Invoice</Typography>
-                    <Typography variant="h6" fontWeight={700}>{formatCurrency(analytics.averageInvoiceAmount)}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Avg Invoice
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {formatCurrency(analytics.averageInvoiceAmount)}
+                    </Typography>
                   </Box>
                 </Box>
               </Paper>
@@ -281,10 +340,16 @@ const CustomerView: React.FC = () => {
 
         {tabIndex === 1 && (
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={2}>Invoices</Typography>
+            <Typography variant="subtitle1" fontWeight={600} mb={2}>
+              Invoices
+            </Typography>
             <Box display="flex" gap={2} mb={2} flexWrap="wrap">
               {Object.entries(analytics.statusCounts).map(([status, count]) => (
-                <Chip key={status} label={`${status}: ${count}`} sx={{ bgcolor: getStatusCssColor(status), color: '#fff' }} />
+                <Chip
+                  key={status}
+                  label={`${status}: ${count}`}
+                  sx={{ bgcolor: getStatusCssColor(status), color: '#fff' }}
+                />
               ))}
             </Box>
             <Box sx={{ height: 420 }}>
@@ -303,24 +368,38 @@ const CustomerView: React.FC = () => {
         {tabIndex === 2 && (
           <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, 1fr)' }} gap={3}>
             <Paper sx={{ p: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>Average Days to Pay</Typography>
-              <Typography variant="h5" fontWeight={700}>{analytics.averageDaysToPay.toFixed(1)} days</Typography>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Average Days to Pay
+              </Typography>
+              <Typography variant="h5" fontWeight={700}>
+                {analytics.averageDaysToPay.toFixed(1)} days
+              </Typography>
             </Paper>
             <Paper sx={{ p: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>On-time Payment Rate</Typography>
-              <Typography variant="h5" fontWeight={700}>{analytics.onTimePaymentRate.toFixed(0)}%</Typography>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                On-time Payment Rate
+              </Typography>
+              <Typography variant="h5" fontWeight={700}>
+                {analytics.onTimePaymentRate.toFixed(0)}%
+              </Typography>
             </Paper>
             <Paper sx={{ p: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>Paid vs Outstanding</Typography>
-              <Typography variant="body2">Paid: {formatCurrency(analytics.totalRevenue)}</Typography>
-              <Typography variant="body2">Outstanding: {formatCurrency(analytics.outstandingAmount)}</Typography>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Paid vs Outstanding
+              </Typography>
+              <Typography variant="body2">
+                Paid: {formatCurrency(analytics.totalRevenue)}
+              </Typography>
+              <Typography variant="body2">
+                Outstanding: {formatCurrency(analytics.outstandingAmount)}
+              </Typography>
             </Paper>
           </Box>
         )}
       </Paper>
 
       {showForm && (
-        <CustomerForm customer={customer as any} onClose={handleCloseForm} />
+        <CustomerForm customer={customer as unknown as DbRow} onClose={handleCloseForm} />
       )}
     </Box>
   );

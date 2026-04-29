@@ -7,8 +7,8 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, ErrorBoundaryState> {
-  constructor(props: React.PropsWithChildren<{}>) {
+class ErrorBoundary extends React.Component<React.PropsWithChildren<object>, ErrorBoundaryState> {
+  constructor(props: React.PropsWithChildren<object>) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -49,7 +49,8 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, ErrorBo
             Something went wrong
           </Typography>
           <Typography variant="body1" color="text.secondary" mb={1} maxWidth={480}>
-            The application encountered an unexpected error. You can try dismissing this or reloading the app.
+            The application encountered an unexpected error. You can try dismissing this or
+            reloading the app.
           </Typography>
           {this.state.error && (
             <Typography

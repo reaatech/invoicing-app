@@ -14,19 +14,19 @@ A standalone **Electron + React** desktop application for macOS (with Windows/Li
 
 ## Tech Stack
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Shell | Electron 40 | Main process + preload with `contextIsolation: true` |
-| Frontend | React 19, TypeScript ~5.9 | HashRouter for Electron compatibility |
-| UI Framework | MUI 7 (Material UI) | Theme created in `App.tsx`, dark/light mode support |
-| Icons | Lucide React | Used across sidebar, status chips, etc. |
-| Styling | Tailwind CSS 4 + MUI `sx` prop | PostCSS plugin is `@tailwindcss/postcss` (not `tailwindcss`) |
-| Database | SQLite via `better-sqlite3` | Synchronous, stored in Electron `userData` |
-| PDF | Puppeteer (headless Chrome) | Renders Mustache HTML templates to PDF |
-| Email | Nodemailer | SMTP with retry + exponential backoff |
-| Templates | Mustache.js | `src/templates/invoice.mustache`, `src/templates/email.mustache` |
-| Bundler | Vite 7 | `base: './'` for Electron file:// protocol |
-| Packaging | Electron Builder 26 | Outputs `.dmg` (mac), `.exe`/NSIS (win), AppImage (linux) |
+| Layer        | Technology                     | Notes                                                            |
+| ------------ | ------------------------------ | ---------------------------------------------------------------- |
+| Shell        | Electron 40                    | Main process + preload with `contextIsolation: true`             |
+| Frontend     | React 19, TypeScript ~5.9      | HashRouter for Electron compatibility                            |
+| UI Framework | MUI 7 (Material UI)            | Theme created in `App.tsx`, dark/light mode support              |
+| Icons        | Lucide React                   | Used across sidebar, status chips, etc.                          |
+| Styling      | Tailwind CSS 4 + MUI `sx` prop | PostCSS plugin is `@tailwindcss/postcss` (not `tailwindcss`)     |
+| Database     | SQLite via `better-sqlite3`    | Synchronous, stored in Electron `userData`                       |
+| PDF          | Puppeteer (headless Chrome)    | Renders Mustache HTML templates to PDF                           |
+| Email        | Nodemailer                     | SMTP with retry + exponential backoff                            |
+| Templates    | Mustache.js                    | `src/templates/invoice.mustache`, `src/templates/email.mustache` |
+| Bundler      | Vite 7                         | `base: './'` for Electron file:// protocol                       |
+| Packaging    | Electron Builder 26            | Outputs `.dmg` (mac), `.exe`/NSIS (win), AppImage (linux)        |
 
 ---
 
@@ -138,6 +138,7 @@ npm run build:electron
 ```
 
 This single command:
+
 1. Compiles `electron/` → `dist/electron/` via `tsconfig.node.json`
 2. Compiles `electron/preload.ts` → `dist/electron/preload.js` via `tsconfig.preload.json` (CommonJS)
 3. Runs `vite build --outDir dist/electron/app`
@@ -162,11 +163,13 @@ npm run start:electron
 The app uses Electron's IPC with strict `contextIsolation: true`. All renderer ↔ main communication flows through the preload bridge.
 
 **Preload** (`electron/preload.ts`):
+
 - Exposes `window.electronAPI` with `sendMessage`, `onMessage`, `removeMessage`
 - Uses a `Map<callback, wrapper>` to correctly track and remove IPC listeners
 - Whitelists valid send/receive channel names
 
 **Renderer** (`src/services/api.ts`):
+
 - Wraps all IPC calls with Promises + timeouts
 - Database queries use a `requestId`-based singleton listener pattern (one persistent `database-response` listener, dispatches by request ID)
 - Non-database IPC uses single-use listeners: register → send → receive → unregister
@@ -174,19 +177,19 @@ The app uses Electron's IPC with strict `contextIsolation: true`. All renderer �
 
 **IPC Channels:**
 
-| Send Channel | Response Channel | Purpose |
-|---|---|---|
-| `database-query` | `database-response` | Generic SQL queries (with requestId) |
-| `settings-save` | `settings-response` | Save company/SMTP settings |
-| `invoice-send` | `invoice-response` | Generate PDF + email invoice |
-| `generate-pdf` | `pdf-response` | Generate PDF only |
-| `export-data` | `export-response` | Export all data as JSON |
-| `import-data` | `import-response` | Import JSON data |
-| `get-next-invoice-number` | `invoice-number-response` | Sequential invoice numbering |
-| `show-save-dialog` | `show-save-dialog-response` | Native save file dialog |
-| `show-open-dialog` | `show-open-dialog-response` | Native open file dialog |
-| `upload-attachment` | `upload-attachment-response` | Upload invoice attachment |
-| `delete-attachment` | `delete-attachment-response` | Delete invoice attachment |
+| Send Channel              | Response Channel             | Purpose                              |
+| ------------------------- | ---------------------------- | ------------------------------------ |
+| `database-query`          | `database-response`          | Generic SQL queries (with requestId) |
+| `settings-save`           | `settings-response`          | Save company/SMTP settings           |
+| `invoice-send`            | `invoice-response`           | Generate PDF + email invoice         |
+| `generate-pdf`            | `pdf-response`               | Generate PDF only                    |
+| `export-data`             | `export-response`            | Export all data as JSON              |
+| `import-data`             | `import-response`            | Import JSON data                     |
+| `get-next-invoice-number` | `invoice-number-response`    | Sequential invoice numbering         |
+| `show-save-dialog`        | `show-save-dialog-response`  | Native save file dialog              |
+| `show-open-dialog`        | `show-open-dialog-response`  | Native open file dialog              |
+| `upload-attachment`       | `upload-attachment-response` | Upload invoice attachment            |
+| `delete-attachment`       | `delete-attachment-response` | Delete invoice attachment            |
 
 ### Database
 
@@ -231,17 +234,17 @@ Any → Cancelled    (manual action)
 
 ### Core Tables
 
-| Table | Key Columns | Notes |
-|---|---|---|
-| `settings` | company_name, smtp_*, logo_base64 | Single row (id=1), stores company + SMTP config |
-| `customers` | name, email, billing_address, phone, notes | FK referenced by invoices |
-| `products` | name, unit_price, unit_type, description | FK referenced by invoice_line_items |
-| `invoices` | invoice_number (unique), customer_id, status, subtotal, total, deleted_at | Soft delete via migration 007 |
-| `invoice_line_items` | invoice_id, product_id, product_name (snapshot), unit_price, quantity, line_total, sort_order | Snapshots price at creation time |
-| `email_logs` | invoice_id, recipient_email, status (success/failed), error_message | |
-| `invoice_attachments` | invoice_id, filename, original_filename, file_path, file_size | Files stored in `userData/attachments/` |
-| `app_settings` | key, value | Key-value store (e.g., `lastBackupDate`) |
-| `schema_migrations` | version, applied_at | Migration tracking |
+| Table                 | Key Columns                                                                                   | Notes                                           |
+| --------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `settings`            | company*name, smtp*\*, logo_base64                                                            | Single row (id=1), stores company + SMTP config |
+| `customers`           | name, email, billing_address, phone, notes                                                    | FK referenced by invoices                       |
+| `products`            | name, unit_price, unit_type, description                                                      | FK referenced by invoice_line_items             |
+| `invoices`            | invoice_number (unique), customer_id, status, subtotal, total, deleted_at                     | Soft delete via migration 007                   |
+| `invoice_line_items`  | invoice_id, product_id, product_name (snapshot), unit_price, quantity, line_total, sort_order | Snapshots price at creation time                |
+| `email_logs`          | invoice_id, recipient_email, status (success/failed), error_message                           |                                                 |
+| `invoice_attachments` | invoice_id, filename, original_filename, file_path, file_size                                 | Files stored in `userData/attachments/`         |
+| `app_settings`        | key, value                                                                                    | Key-value store (e.g., `lastBackupDate`)        |
+| `schema_migrations`   | version, applied_at                                                                           | Migration tracking                              |
 
 ### Indexed Columns
 
@@ -376,14 +379,14 @@ No automated test suite exists yet. When testing manually or adding tests, verif
 
 ## Dependencies of Note
 
-| Package | Why It Matters |
-|---|---|
-| `better-sqlite3` | Native module — must match Electron's Node version. Rebuild after Electron upgrades with `electron-rebuild`. |
-| `puppeteer` | Downloads Chromium. Large dependency. `PUPPETEER_EXECUTABLE_PATH` env var can override. In packaged builds, ensure Chromium is accessible. |
-| `@tailwindcss/postcss` | Tailwind v4 PostCSS integration. Plugin name is **not** `tailwindcss`. |
-| `react-hot-toast` | Toast notifications. Configured in `App.tsx` with dark mode CSS variables. |
-| `recharts` | Dashboard charts in `Home.tsx`. |
-| `@mui/x-data-grid` | Data grid component (available but may not be used in all list views). |
+| Package                | Why It Matters                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `better-sqlite3`       | Native module — must match Electron's Node version. Rebuild after Electron upgrades with `electron-rebuild`.                               |
+| `puppeteer`            | Downloads Chromium. Large dependency. `PUPPETEER_EXECUTABLE_PATH` env var can override. In packaged builds, ensure Chromium is accessible. |
+| `@tailwindcss/postcss` | Tailwind v4 PostCSS integration. Plugin name is **not** `tailwindcss`.                                                                     |
+| `react-hot-toast`      | Toast notifications. Configured in `App.tsx` with dark mode CSS variables.                                                                 |
+| `recharts`             | Dashboard charts in `Home.tsx`.                                                                                                            |
+| `@mui/x-data-grid`     | Data grid component (available but may not be used in all list views).                                                                     |
 
 ---
 

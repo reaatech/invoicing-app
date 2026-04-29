@@ -3,6 +3,6 @@ export const formatCurrency = (amount: number | string | null | undefined): stri
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : (amount ?? 0);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'USD',
   }).format(numAmount);
 };

@@ -2,8 +2,8 @@
 // Actual PDF generation happens in main process via IPC
 
 export async function generateInvoicePDF(
-  invoiceData: unknown, 
-  outputPath: string
+  invoiceData: unknown,
+  outputPath: string,
 ): Promise<{ success: boolean; path?: string; error?: string }> {
   return new Promise((resolve) => {
     window.electronAPI.sendMessage('generate-pdf', invoiceData, outputPath);

@@ -3,7 +3,10 @@
 // which have proper timeout handling and listener cleanup.
 
 // Helper function to download exported data as JSON file
-export function downloadExportedData(jsonData: string, filename: string = 'invoicing-data-export.json') {
+export function downloadExportedData(
+  jsonData: string,
+  filename: string = 'invoicing-data-export.json',
+) {
   const blob = new Blob([jsonData], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

@@ -2,12 +2,18 @@ import { FileEdit, Send, CheckCircle, AlertCircle, XCircle, type LucideIcon } fr
 
 export const getStatusCssColor = (status: string): string => {
   switch (status) {
-    case 'Draft': return '#6b7280';
-    case 'Sent': return '#2563eb';
-    case 'Paid': return '#16a34a';
-    case 'Overdue': return '#ef4444';
-    case 'Cancelled': return '#9ca3af';
-    default: return '#6b7280';
+    case 'Draft':
+      return '#6b7280';
+    case 'Sent':
+      return '#2563eb';
+    case 'Paid':
+      return '#16a34a';
+    case 'Overdue':
+      return '#ef4444';
+    case 'Cancelled':
+      return '#9ca3af';
+    default:
+      return '#6b7280';
   }
 };
 

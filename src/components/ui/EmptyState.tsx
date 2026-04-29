@@ -32,12 +32,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       textAlign="center"
       className={className}
     >
-      <Box
-        borderRadius="50%"
-        bgcolor="action.hover"
-        p={3}
-        mb={2}
-      >
+      <Box borderRadius="50%" bgcolor="action.hover" p={3} mb={2}>
         <Icon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
       </Box>
       <Typography variant="h6" fontWeight={600} mb={1}>
@@ -48,11 +43,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {description}
         </Typography>
       )}
-      {action || (actionLabel && onAction && (
-        <Button variant="contained" onClick={onAction}>
-          {actionLabel}
-        </Button>
-      ))}
+      {action ||
+        (actionLabel && onAction && (
+          <Button variant="contained" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        ))}
     </Box>
   );
 };

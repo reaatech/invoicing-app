@@ -1,11 +1,12 @@
 interface ElectronAPI {
-    sendMessage: (channel: string, ...data: unknown[]) => void;
-    onMessage: (channel: string, callback: (...args: unknown[]) => void) => void;
-    removeMessage: (channel: string, callback: (...args: unknown[]) => void) => void;
+  sendMessage: (channel: string, ...data: unknown[]) => void;
+  onMessage: (channel: string, callback: (...args: unknown[]) => void) => void;
+  removeMessage: (channel: string, callback: (...args: unknown[]) => void) => void;
 }
 declare global {
-    interface Window {
-        electronAPI: ElectronAPI;
-    }
+  interface Window {
+    electronAPI: ElectronAPI;
+  }
 }
+export type DbRow = Record<string, unknown>;
 export {};
