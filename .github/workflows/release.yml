@@ -1,0 +1,98 @@
+name: Release
+
+# Triggers on push to main, but only when package-lock.json changed.
+# This means only dependency bumps (e.g. Dependabot PRs) cut releases.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package-lock.json'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  bump:
+    name: Bump version & tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump patch version and tag
+        id: bump
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+
+          # Idempotent: skip if tag already exists (e.g. re-run)
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — nothing to bump."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+          TAG="v$NEW_VERSION"
+
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add package.json
+          git commit -m "chore: release $TAG"
+          git tag "$TAG"
+          git push origin main --tags
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build & publish (${{ matrix.os }})
+    needs: bump
+    if: needs.bump.outputs.tag != '' && needs.bump.outputs.skip != 'true'
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx tsc -b tsconfig.node.json
+
+      - run: npx tsc -b tsconfig.preload.json
+
+      - run: npx vite build --outDir dist/electron/app
+
+      - run: >
+          node -e "
+            const fs = require('fs');
+            fs.mkdirSync('dist/electron/database/migrations', {recursive: true});
+            fs.cpSync('electron/database/migrations', 'dist/electron/database/migrations', {recursive: true});
+            fs.mkdirSync('dist/electron/templates', {recursive: true});
+            fs.cpSync('src/templates', 'dist/electron/templates', {recursive: true});
+          "
+
+      - run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
