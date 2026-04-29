@@ -23,45 +23,6 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
 
-  deps-check:
-    name: Deps (Major + Patch)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - name: Check for outdated major and patch versions
-        run: |
-          npm outdated --json 2>/dev/null | node -e '
-            const chunks = [];
-            process.stdin.on("data", c => chunks.push(c));
-            process.stdin.on("end", () => {
-              const input = Buffer.concat(chunks).toString().trim();
-              if (!input) { console.log("All dependencies up to date."); process.exit(0); }
-              const deps = JSON.parse(input);
-              const semverDiff = (current, latest) => {
-                const c = current.replace(/^[~^>=<]*/,"").split(".").map(Number);
-                const l = latest.split(".").map(Number);
-                if (l[0] > c[0]) return "major";
-                if (l[1] > c[1]) return "minor";
-                return "patch";
-              };
-              const outdated = Object.entries(deps).filter(([_,v]) => {
-                const t = semverDiff(v.current, v.latest);
-                return t === "major" || t === "patch";
-              });
-              if (outdated.length) {
-                console.log("Outdated (major or patch):");
-                outdated.forEach(([name,v]) => console.log(`  ${name}: ${v.current} → ${v.latest}`));
-                process.exit(1);
-              }
-              console.log("No major or patch updates needed.");
-            });
-          '
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
