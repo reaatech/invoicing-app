@@ -31,8 +31,8 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
 
           if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v$VERSION already exists — publishing existing release."
+            echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -59,7 +59,7 @@ jobs:
   build:
     name: Build ${{ matrix.os }}
     needs: bump
-    if: needs.bump.outputs.tag != '' && needs.bump.outputs.skip != 'true'
+    if: needs.bump.outputs.tag != ''
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
