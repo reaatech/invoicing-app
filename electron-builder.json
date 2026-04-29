@@ -11,7 +11,7 @@
       "to": "templates"
     }
   ],
-  "asar": false,
+  "asar": true,
   "extraMetadata": {
     "main": "dist/electron/main.js"
   },
