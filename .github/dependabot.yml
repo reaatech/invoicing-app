@@ -8,9 +8,7 @@ updates:
       time: '09:00'
       timezone: 'America/Chicago'
     ignore:
-      - dependency-type: 'direct:production'
-        update-types: ['version-update:semver-minor']
-      - dependency-type: 'direct:development'
+      - dependency-name: '*'
         update-types: ['version-update:semver-minor']
     commit-message:
       prefix: 'ci(deps)'
