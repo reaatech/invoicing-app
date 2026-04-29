@@ -1,0 +1,59 @@
+name: Release Bump
+
+# Triggers on push to main, but only when package-lock.json changed.
+# This means only dependency bumps (Dependabot PRs) cut releases,
+# not regular code commits.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package-lock.json'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        # Use RELEASE_TOKEN (a PAT) instead of GITHUB_TOKEN so the
+        # tag push triggers the release-build workflow. Pushes made
+        # with the default GITHUB_TOKEN do not trigger further
+        # workflows, which would silently skip the release build.
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump patch version and tag
+        id: bump
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+
+          # Idempotent: if the tag for the current version already
+          # exists (e.g. a re-run), skip cleanly.
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — nothing to bump."
+            exit 0
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add package.json
+          git commit -m "chore: release v$NEW_VERSION"
+          git tag "v$NEW_VERSION"
+
+          # Push both the commit and the tag. Because we use
+          # RELEASE_TOKEN, this tag push will trigger release-build.
+          git push origin main --tags

@@ -15,17 +15,16 @@
   "extraMetadata": {
     "main": "dist/electron/main.js"
   },
+  "publish": {
+    "provider": "github",
+    "releaseType": "release"
+  },
   "mac": {
-    "target": ["dmg"],
+    "target": ["dmg", "zip"],
     "icon": "public/icon.icns"
   },
   "win": {
-    "target": [
-      {
-        "target": "nsis",
-        "arch": ["x64", "ia32"]
-      }
-    ],
+    "target": ["nsis", "portable"],
     "icon": "public/icon.ico"
   },
   "linux": {
