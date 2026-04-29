@@ -7,17 +7,15 @@ on:
       - 'package-lock.json'
   workflow_dispatch:
 
-# Needed so the default GITHUB_TOKEN can push the version-bump
-# commit and tag back to the repo. No secret configuration required.
 permissions:
   contents: write
 
 jobs:
-  bump:
-    name: Bump version
+  prepare:
+    name: Prepare ${{ github.event_name == 'push' && 'bump + tag' || 'tag' }}
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.bump.outputs.tag }}
+      tag: ${{ steps.done.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,41 +23,51 @@ jobs:
         with:
           node-version: 22
 
-      - name: Bump patch version and tag
-        id: bump
+      - name: Resolve tag
+        id: done
         run: |
           VERSION=$(node -p "require('./package.json').version")
 
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists — publishing existing release."
-            echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
-            exit 0
+          if [ "${{ github.event_name }}" = "push" ]; then
+            if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+              echo "Tag v$VERSION already exists."
+              echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+            TAG="v$NEW_VERSION"
+
+            node -e "
+              const fs = require('fs');
+              const pkg = require('./package.json');
+              pkg.version = '$NEW_VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
+
+            git config user.name  'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add package.json
+            git commit -m "chore: release $TAG"
+            git tag "$TAG"
+            git push origin main --tags
+
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          else
+            TAG="v$VERSION"
+
+            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "Error: tag $TAG does not exist. Push a lockfile change to create it."
+              exit 1
+            fi
+
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           fi
-
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          TAG="v$NEW_VERSION"
-
-          node -e "
-            const fs = require('fs');
-            const pkg = require('./package.json');
-            pkg.version = '$NEW_VERSION';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
-          git config user.name  'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add package.json
-          git commit -m "chore: release $TAG"
-          git tag "$TAG"
-          git push origin main --tags
-
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build ${{ matrix.os }}
-    needs: bump
-    if: needs.bump.outputs.tag != ''
+    needs: prepare
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
@@ -68,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.bump.outputs.tag }}
+          ref: ${{ needs.prepare.outputs.tag }}
 
       - uses: actions/setup-node@v4
         with:
