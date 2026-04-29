@@ -92,6 +92,9 @@ jobs:
             fs.cpSync('src/templates', 'dist/electron/templates', {recursive: true});
           "
 
-      - run: npx electron-builder --publish always
+      - name: Build and publish
+        run: |
+          ulimit -n 4096
+          npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ github.token }}
