@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { downloadExportedData, readImportFile } from './export';
 
 describe('downloadExportedData', () => {
@@ -59,6 +59,16 @@ describe('downloadExportedData', () => {
 });
 
 describe('readImportFile', () => {
+  let originalFileReader: typeof FileReader;
+
+  beforeEach(() => {
+    originalFileReader = window.FileReader;
+  });
+
+  afterEach(() => {
+    window.FileReader = originalFileReader;
+  });
+
   it('reads a file and resolves with its content', async () => {
     const content = '{"key": "value"}';
     const file = new File([content], 'test.json', { type: 'application/json' });
@@ -69,26 +79,27 @@ describe('readImportFile', () => {
 
   it('rejects when FileReader errors', async () => {
     const file = new File([''], 'test.json', { type: 'application/json' });
-    const originalFileReader = window.FileReader;
 
-    window.FileReader = vi.fn(() => ({
-      readAsText: vi.fn(),
-      onload: null as (() => void) | null,
-      onerror: null as (() => void) | null,
-      result: null as string | null,
-    })) as unknown as typeof FileReader;
+    window.FileReader = vi.fn().mockImplementation(function (this: FileReader) {
+      Object.assign(this, {
+        readAsText: vi.fn(),
+        onload: null as (() => void) | null,
+        onerror: null as (() => void) | null,
+        result: null as string | null,
+      });
+    }) as unknown as typeof FileReader;
 
     const promise = readImportFile(file);
-    const mockReader = (window.FileReader as unknown as ReturnType<typeof vi.fn>).mock.results[0]
-      .value;
+    const mockResults = (window.FileReader as unknown as ReturnType<typeof vi.fn>).mock.results[0];
+    const mockReader = mockResults.value as {
+      onerror: (() => void) | null;
+    };
 
     if (mockReader.onerror) {
       mockReader.onerror();
     }
 
     await expect(promise).rejects.toThrow('Failed to read file');
-
-    window.FileReader = originalFileReader;
   });
 
   it('reads non-empty file content', async () => {
