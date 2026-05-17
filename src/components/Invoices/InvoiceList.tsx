@@ -239,31 +239,35 @@ const InvoiceList: React.FC = () => {
 
   return (
     <Paper sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight={600} mb={3}>
+      <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
         Invoices
       </Typography>
       <Box
-        display="flex"
-        flexDirection={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        gap={2}
-        mb={3}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 2,
+          mb: 3,
+        }}
       >
-        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
           <TextField
             placeholder="Search invoices..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search className="h-4 w-4" />
-                </InputAdornment>
-              ),
-            }}
             sx={{ minWidth: 220 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search className="h-4 w-4" />
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
           <TextField
             select
@@ -286,7 +290,7 @@ const InvoiceList: React.FC = () => {
             label="Start Date"
             value={dateRange.startDate}
             onChange={(e) => setDateRange((prev) => ({ ...prev, startDate: e.target.value }))}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             type="date"
@@ -294,7 +298,7 @@ const InvoiceList: React.FC = () => {
             label="End Date"
             value={dateRange.endDate}
             onChange={(e) => setDateRange((prev) => ({ ...prev, endDate: e.target.value }))}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <Button variant="outlined" onClick={() => setDateRange({ startDate: '', endDate: '' })}>
             Clear

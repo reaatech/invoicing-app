@@ -455,10 +455,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
           <Box
-            display="grid"
-            gap={2}
-            gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
-            mb={3}
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+              mb: 3,
+            }}
           >
             <TextField
               label="Invoice Number"
@@ -490,9 +492,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
               name="issue_date"
               value={formData.issue_date}
               onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
               required
               disabled={Boolean(invoice && formData.status !== 'Draft')}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               type="date"
@@ -500,9 +502,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
               name="due_date"
               value={formData.due_date}
               onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
               required
               disabled={Boolean(invoice && formData.status !== 'Draft')}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               select
@@ -534,8 +536,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
             )}
           </Box>
 
-          <Box mb={3} hidden={invoice && formData.status !== 'Draft'}>
-            <Typography variant="h6" fontWeight={600} mb={2} color="text.secondary">
+          <Box hidden={invoice && formData.status !== 'Draft'} sx={{ mb: 3 }}>
+            <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600, mb: 2 }}>
               Line Items
             </Typography>
             <Box sx={{ overflowX: 'auto' }}>
@@ -555,7 +557,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                     lineItems.map((item) => (
                       <TableRow key={item.id} hover>
                         <TableCell>
-                          <Box display="flex" flexDirection="column" gap={1}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <TextField
                               select
                               size="small"
@@ -641,7 +643,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                 </TableBody>
               </Table>
             </Box>
-            <Box mt={2}>
+            <Box sx={{ mt: 2 }}>
               <Button variant="outlined" onClick={handleAddLineItem}>
                 Add Line Item
               </Button>
@@ -649,10 +651,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
           </Box>
 
           <Box
-            display="grid"
-            gap={2}
-            gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
-            mb={2}
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+              mb: 2,
+            }}
           >
             <TextField
               label="Notes (Visible on Invoice)"
@@ -674,15 +678,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
           </Box>
 
           {invoice ? (
-            <Box mb={2}>
+            <Box sx={{ mb: 2 }}>
               <InvoiceAttachments
                 invoiceId={Number(invoice.id)}
                 readOnly={formData.status !== 'Draft'}
               />
             </Box>
           ) : (
-            <Box mb={2}>
-              <Typography variant="subtitle2" fontWeight={600} mb={1}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                 <Paperclip className="h-4 w-4 inline mr-1" />
                 Attachments
               </Typography>
@@ -700,10 +704,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, initialCustomerId, o
                   {pendingAttachments.map((filePath, index) => (
                     <Box
                       key={index}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ py: 0.5, px: 1, bgcolor: 'action.hover', borderRadius: 1, mb: 0.5 }}
+                      sx={{
+                        ...{ py: 0.5, px: 1, bgcolor: 'action.hover', borderRadius: 1, mb: 0.5 },
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
                     >
                       <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                         {filePath.split('/').pop() || filePath.split('\\').pop() || filePath}

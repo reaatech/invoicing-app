@@ -348,7 +348,7 @@ const InvoiceView: React.FC = () => {
   }
 
   return (
-    <Box display="flex" flexDirection="column" gap={2}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Breadcrumbs
         items={[
           { label: 'Home', to: '/' },
@@ -358,17 +358,19 @@ const InvoiceView: React.FC = () => {
       />
       <Paper sx={{ p: 3 }}>
         <Box
-          display="flex"
-          flexDirection={{ xs: 'column', md: 'row' }}
-          justifyContent="space-between"
-          gap={2}
-          mb={3}
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            gap: 2,
+            mb: 3,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700} mb={1}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
               Invoice {invoice.invoice_number}
             </Typography>
-            <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
               <Chip
                 label={invoice.status}
                 sx={{ bgcolor: getStatusCssColor(invoice.status), color: '#fff' }}
@@ -382,7 +384,7 @@ const InvoiceView: React.FC = () => {
               </Typography>
             </Box>
           </Box>
-          <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="center">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <Button
               variant="outlined"
               startIcon={<ArrowLeft className="h-4 w-4" />}
@@ -452,12 +454,19 @@ const InvoiceView: React.FC = () => {
 
         <Divider sx={{ mb: 3 }} />
 
-        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1.1fr 1fr' }} gap={3} mb={3}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' },
+            gap: 3,
+            mb: 3,
+          }}
+        >
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
               Customer
             </Typography>
-            <Typography variant="h6" fontWeight={600}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
               {customer?.name || 'Unknown Customer'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -480,12 +489,12 @@ const InvoiceView: React.FC = () => {
             )}
           </Paper>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
               Totals
             </Typography>
-            <Box display="flex" flexDirection="column" gap={1}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Typography variant="body1">Subtotal: {formatCurrency(invoice.subtotal)}</Typography>
-              <Typography variant="body1" fontWeight={600}>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
                 Total: {formatCurrency(invoice.total)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -496,7 +505,7 @@ const InvoiceView: React.FC = () => {
         </Box>
 
         <Paper sx={{ p: 2.5, mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600} mb={2}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
             Line Items
           </Typography>
           <Table size="small">
@@ -523,9 +532,11 @@ const InvoiceView: React.FC = () => {
           </Table>
         </Paper>
 
-        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
+        <Box
+          sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}
+        >
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
               Notes
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -533,7 +544,7 @@ const InvoiceView: React.FC = () => {
             </Typography>
           </Paper>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
               Internal Memo
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -542,9 +553,11 @@ const InvoiceView: React.FC = () => {
           </Paper>
         </Box>
 
-        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
+        <Box
+          sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}
+        >
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
               Email History
             </Typography>
             {emailLogs.length === 0 ? (
@@ -579,10 +592,16 @@ const InvoiceView: React.FC = () => {
         </Box>
 
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} mb={1}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
             Audit Trail
           </Typography>
-          <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }} gap={1.5}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+              gap: 1.5,
+            }}
+          >
             <Typography variant="body2">Created: {invoice.created_at || '—'}</Typography>
             <Typography variant="body2">Updated: {invoice.updated_at || '—'}</Typography>
             <Typography variant="body2">Sent: {invoice.sent_at || '—'}</Typography>

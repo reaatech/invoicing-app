@@ -203,7 +203,7 @@ const CustomerView: React.FC = () => {
   ];
 
   return (
-    <Box display="flex" flexDirection="column" gap={2}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Breadcrumbs
         items={[
           { label: 'Home', to: '/' },
@@ -213,21 +213,23 @@ const CustomerView: React.FC = () => {
       />
       <Paper sx={{ p: 3 }}>
         <Box
-          display="flex"
-          flexDirection={{ xs: 'column', md: 'row' }}
-          justifyContent="space-between"
-          gap={2}
-          mb={3}
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            gap: 2,
+            mb: 3,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
               {customer.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {customer.email || 'No email'}
             </Typography>
           </Box>
-          <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="center">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <Button
               variant="outlined"
               startIcon={<ArrowLeft className="h-4 w-4" />}
@@ -281,10 +283,12 @@ const CustomerView: React.FC = () => {
         <Divider sx={{ my: 2 }} />
 
         {tabIndex === 0 && (
-          <Box display="flex" flexDirection="column" gap={3}>
-            <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box
+              sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}
+            >
               <Paper sx={{ p: 2.5 }}>
-                <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                   Customer Info
                 </Typography>
                 <Typography variant="body2">Phone: {customer.phone || '—'}</Typography>
@@ -296,15 +300,21 @@ const CustomerView: React.FC = () => {
                 <Typography variant="body2">Updated: {customer.updated_at || '—'}</Typography>
               </Paper>
               <Paper sx={{ p: 2.5 }}>
-                <Typography variant="subtitle1" fontWeight={600} mb={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                   Quick Stats
                 </Typography>
-                <Box display="grid" gridTemplateColumns={{ xs: '1fr 1fr', md: '1fr 1fr' }} gap={2}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr' },
+                    gap: 2,
+                  }}
+                >
                   <Box>
                     <Typography variant="caption" color="text.secondary">
                       Total Invoices
                     </Typography>
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
                       {analytics.totalInvoices}
                     </Typography>
                   </Box>
@@ -312,7 +322,7 @@ const CustomerView: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       Total Revenue
                     </Typography>
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
                       {formatCurrency(analytics.totalRevenue)}
                     </Typography>
                   </Box>
@@ -320,7 +330,7 @@ const CustomerView: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       Outstanding
                     </Typography>
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
                       {formatCurrency(analytics.outstandingAmount)}
                     </Typography>
                   </Box>
@@ -328,7 +338,7 @@ const CustomerView: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       Avg Invoice
                     </Typography>
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
                       {formatCurrency(analytics.averageInvoiceAmount)}
                     </Typography>
                   </Box>
@@ -340,10 +350,10 @@ const CustomerView: React.FC = () => {
 
         {tabIndex === 1 && (
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
               Invoices
             </Typography>
-            <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
               {Object.entries(analytics.statusCounts).map(([status, count]) => (
                 <Chip
                   key={status}
@@ -366,25 +376,31 @@ const CustomerView: React.FC = () => {
         )}
 
         {tabIndex === 2 && (
-          <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, 1fr)' }} gap={3}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+              gap: 3,
+            }}
+          >
             <Paper sx={{ p: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                 Average Days to Pay
               </Typography>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {analytics.averageDaysToPay.toFixed(1)} days
               </Typography>
             </Paper>
             <Paper sx={{ p: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                 On-time Payment Rate
               </Typography>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {analytics.onTimePaymentRate.toFixed(0)}%
               </Typography>
             </Paper>
             <Paper sx={{ p: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                 Paid vs Outstanding
               </Typography>
               <Typography variant="body2">

@@ -131,12 +131,14 @@ const BulkActions: React.FC<BulkActionsProps> = ({ selectedInvoices, onActionCom
   return (
     <Paper sx={{ p: 2, mb: 3 }}>
       <Box
-        display="flex"
-        flexDirection={{ xs: 'column', md: 'row' }}
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        gap={2}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 2,
+        }}
       >
-        <Typography fontWeight={600}>Selected: {selectedInvoices.length}</Typography>
+        <Typography sx={{ fontWeight: 600 }}>Selected: {selectedInvoices.length}</Typography>
         <FormControl size="small" sx={{ minWidth: 220 }}>
           <InputLabel id="bulk-action-label">Action</InputLabel>
           <Select

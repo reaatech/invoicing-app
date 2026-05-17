@@ -30,19 +30,21 @@ const Sidebar: React.FC = () => {
             <NavLink to={item.to} style={{ textDecoration: 'none', width: '100%' }}>
               {({ isActive }) => (
                 <Box
-                  display="flex"
-                  alignItems="center"
-                  gap={1.5}
-                  px={2}
-                  py={1}
-                  borderRadius={1.5}
-                  bgcolor={isActive ? 'primary.main' : 'transparent'}
-                  color={isActive ? 'primary.contrastText' : 'text.primary'}
                   sx={{
-                    transition: 'all 150ms ease',
-                    '&:hover': {
-                      bgcolor: isActive ? 'primary.dark' : 'action.hover',
+                    ...{
+                      transition: 'all 150ms ease',
+                      '&:hover': {
+                        bgcolor: isActive ? 'primary.dark' : 'action.hover',
+                      },
                     },
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1.5,
+                    bgcolor: isActive ? 'primary.main' : 'transparent',
+                    color: isActive ? 'primary.contrastText' : 'text.primary',
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>{item.icon}</ListItemIcon>

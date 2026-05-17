@@ -149,26 +149,30 @@ const CustomerList: React.FC = () => {
   return (
     <Paper sx={{ p: 3 }}>
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        gap={2}
-        mb={3}
-        flexDirection={{ xs: 'column', md: 'row' }}
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 2,
+          mb: 3,
+          flexDirection: { xs: 'column', md: 'row' },
+        }}
       >
         <TextField
           placeholder="Search customers..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search className="h-4 w-4" />
-              </InputAdornment>
-            ),
-          }}
           sx={{ maxWidth: 360 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search className="h-4 w-4" />
+                </InputAdornment>
+              ),
+            },
+          }}
         />
         <Button
           variant="contained"

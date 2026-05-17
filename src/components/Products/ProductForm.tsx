@@ -120,7 +120,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose }) => {
       <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="Product Name"
               name="name"
@@ -139,16 +139,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose }) => {
               minRows={3}
               fullWidth
             />
-            <Box display="grid" gap={2} gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+              }}
+            >
               <TextField
                 label="Unit Price"
                 name="unit_price"
                 value={formData.unit_price}
                 onChange={handleChange}
                 type="number"
-                inputProps={{ step: '0.01', min: 0 }}
                 required
                 fullWidth
+                slotProps={{ htmlInput: { step: '0.01', min: 0 } }}
               />
               <TextField
                 label="Unit Type"

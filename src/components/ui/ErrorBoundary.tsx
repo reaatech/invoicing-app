@@ -34,21 +34,23 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<object>, Err
     if (this.state.hasError) {
       return (
         <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          minHeight="100vh"
-          bgcolor="background.default"
-          color="text.primary"
-          p={4}
-          textAlign="center"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            bgcolor: 'background.default',
+            color: 'text.primary',
+            p: 4,
+            textAlign: 'center',
+          }}
         >
           <AlertCircle style={{ width: 64, height: 64, color: '#ef4444', marginBottom: 16 }} />
-          <Typography variant="h5" fontWeight={700} mb={1}>
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
             Something went wrong
           </Typography>
-          <Typography variant="body1" color="text.secondary" mb={1} maxWidth={480}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 1, maxWidth: 480 }}>
             The application encountered an unexpected error. You can try dismissing this or
             reloading the app.
           </Typography>
@@ -56,14 +58,16 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<object>, Err
             <Typography
               variant="body2"
               color="error"
-              mb={3}
-              maxWidth={600}
-              sx={{ fontFamily: 'monospace', fontSize: '0.8rem', opacity: 0.8 }}
+              sx={{
+                ...{ fontFamily: 'monospace', fontSize: '0.8rem', opacity: 0.8 },
+                mb: 3,
+                maxWidth: 600,
+              }}
             >
               {this.state.error.message}
             </Typography>
           )}
-          <Box display="flex" gap={2}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <Button variant="outlined" onClick={this.handleDismiss}>
               Dismiss
             </Button>
