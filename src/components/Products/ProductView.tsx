@@ -186,7 +186,7 @@ const ProductView: React.FC = () => {
   ];
 
   return (
-    <Box display="flex" flexDirection="column" gap={2}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Breadcrumbs
         items={[
           { label: 'Home', to: '/' },
@@ -196,21 +196,23 @@ const ProductView: React.FC = () => {
       />
       <Paper sx={{ p: 3 }}>
         <Box
-          display="flex"
-          flexDirection={{ xs: 'column', md: 'row' }}
-          justifyContent="space-between"
-          gap={2}
-          mb={3}
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            gap: 2,
+            mb: 3,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
               {product.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {product.description || 'No description'}
             </Typography>
           </Box>
-          <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="center">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
             <Button
               variant="outlined"
               startIcon={<ArrowLeft className="h-4 w-4" />}
@@ -238,9 +240,11 @@ const ProductView: React.FC = () => {
 
         <Divider sx={{ mb: 3 }} />
 
-        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
+        <Box
+          sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}
+        >
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
               Pricing
             </Typography>
             <Typography variant="body1">
@@ -254,7 +258,7 @@ const ProductView: React.FC = () => {
             </Typography>
           </Paper>
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
               Usage
             </Typography>
             <Typography variant="body2">Invoices using this product: {invoices.length}</Typography>
@@ -262,7 +266,7 @@ const ProductView: React.FC = () => {
         </Box>
 
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} mb={2}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
             Invoices with this product
           </Typography>
           <Box sx={{ height: 420 }}>

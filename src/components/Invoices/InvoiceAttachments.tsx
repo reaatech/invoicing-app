@@ -136,8 +136,8 @@ const InvoiceAttachments: React.FC<InvoiceAttachmentsProps> = ({ invoiceId, read
 
   return (
     <Paper sx={{ p: 2.5 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" fontWeight={600}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
           <Paperclip className="h-5 w-5 inline mr-2" />
           Attachments
         </Typography>

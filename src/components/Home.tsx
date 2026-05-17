@@ -229,15 +229,15 @@ const Home: React.FC = () => {
   }, [dateRange]);
 
   return (
-    <Box width="100%">
-      <Typography variant="h5" fontWeight={600} mb={2}>
+    <Box sx={{ width: '100%' }}>
+      <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
         Dashboard
       </Typography>
       <Paper sx={{ p: 2.5, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Quick Actions
         </Typography>
-        <Box display="flex" flexWrap="wrap" gap={2}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           <Button variant="contained" onClick={() => navigate('/invoices')}>
             Create New Invoice
           </Button>
@@ -251,24 +251,26 @@ const Home: React.FC = () => {
       </Paper>
       <Paper sx={{ p: 2.5, mb: 3 }}>
         <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems={{ xs: 'stretch', md: 'center' }}
-          flexDirection={{ xs: 'column', md: 'row' }}
-          gap={2}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: { xs: 'stretch', md: 'center' },
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 2,
+          }}
         >
-          <Typography variant="subtitle1" fontWeight={600}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             Filter by Date Range
           </Typography>
-          <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
             <TextField
               type="date"
               name="startDate"
               value={dateRange.startDate}
               onChange={handleDateRangeChange}
               label="Start Date"
-              InputLabelProps={{ shrink: true }}
               size="small"
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               type="date"
@@ -276,8 +278,8 @@ const Home: React.FC = () => {
               value={dateRange.endDate}
               onChange={handleDateRangeChange}
               label="End Date"
-              InputLabelProps={{ shrink: true }}
               size="small"
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <Button variant="outlined" onClick={clearDateFilter}>
               Clear
@@ -285,12 +287,19 @@ const Home: React.FC = () => {
           </Box>
         </Box>
       </Paper>
-      <Box display="grid" gap={2} gridTemplateColumns={{ xs: '1fr', md: 'repeat(4, 1fr)' }} mb={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
+          mb: 3,
+        }}
+      >
         <Paper sx={{ p: 2.5, textAlign: 'center' }}>
           <Typography variant="subtitle1" color="primary">
             Total Invoices
           </Typography>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
             {stats.totalInvoices}
           </Typography>
         </Paper>
@@ -298,7 +307,7 @@ const Home: React.FC = () => {
           <Typography variant="subtitle1" color="success.main">
             Total Revenue
           </Typography>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
             {formatCurrency(stats.totalRevenue)}
           </Typography>
         </Paper>
@@ -306,7 +315,7 @@ const Home: React.FC = () => {
           <Typography variant="subtitle1" color="warning.main">
             Outstanding Invoices
           </Typography>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
             {stats.outstandingInvoices}
           </Typography>
         </Paper>
@@ -314,14 +323,16 @@ const Home: React.FC = () => {
           <Typography variant="subtitle1" color="error.main">
             Outstanding Amount
           </Typography>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
             {formatCurrency(stats.outstandingAmount)}
           </Typography>
         </Paper>
       </Box>
-      <Box display="grid" gap={3} gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} mb={3}>
+      <Box
+        sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 3 }}
+      >
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Revenue Trend (Last 6 Months)
           </Typography>
           <ResponsiveContainer width="100%" height={250}>
@@ -343,7 +354,7 @@ const Home: React.FC = () => {
         </Paper>
 
         <Paper sx={{ p: 2.5 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Invoice Status Breakdown
           </Typography>
           <ResponsiveContainer width="100%" height={250}>
@@ -370,7 +381,7 @@ const Home: React.FC = () => {
       </Box>
 
       <Paper sx={{ p: 2.5, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Paid vs Outstanding (Monthly)
         </Typography>
         <ResponsiveContainer width="100%" height={250}>
@@ -387,7 +398,7 @@ const Home: React.FC = () => {
       </Paper>
 
       <Paper sx={{ p: 2.5 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Recent Invoices
         </Typography>
         <Table size="small">

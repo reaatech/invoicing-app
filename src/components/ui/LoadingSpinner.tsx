@@ -20,12 +20,10 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   return (
     <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
       role="status"
       aria-label={label}
       className={className}
+      sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <CircularProgress size={sizeMap[size]} />
       <Typography

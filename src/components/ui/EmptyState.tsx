@@ -23,23 +23,25 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      py={6}
-      px={4}
-      textAlign="center"
       className={className}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 6,
+        px: 4,
+        textAlign: 'center',
+      }}
     >
-      <Box borderRadius="50%" bgcolor="action.hover" p={3} mb={2}>
+      <Box sx={{ borderRadius: '50%', bgcolor: 'action.hover', p: 3, mb: 2 }}>
         <Icon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
       </Box>
-      <Typography variant="h6" fontWeight={600} mb={1}>
+      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
         {title}
       </Typography>
       {description && (
-        <Typography variant="body2" color="text.secondary" mb={3} maxWidth={480}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 480 }}>
           {description}
         </Typography>
       )}

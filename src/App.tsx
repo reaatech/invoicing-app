@@ -99,10 +99,10 @@ function App() {
     return (
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <Box className="app-splash" bgcolor="background.default" color="text.primary">
+        <Box className="app-splash" sx={{ bgcolor: 'background.default', color: 'text.primary' }}>
           <Box className="app-splash-card">
             <img src={appLogo} alt="Invoicing App" className="app-splash-logo" />
-            <Typography variant="h6" fontWeight={700}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Invoicing App
             </Typography>
           </Box>
@@ -116,7 +116,14 @@ function App() {
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
         <HashRouter>
-          <Box display="flex" minHeight="100vh" bgcolor="background.default" color="text.primary">
+          <Box
+            sx={{
+              display: 'flex',
+              minHeight: '100vh',
+              bgcolor: 'background.default',
+              color: 'text.primary',
+            }}
+          >
             <Toaster
               position="top-right"
               toastOptions={{
@@ -141,9 +148,12 @@ function App() {
               }}
             />
             <Sidebar />
-            <Box display="flex" flexDirection="column" flex={1} minWidth={0}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
               <Header darkMode={darkMode} onToggleDarkMode={() => setDarkMode((prev) => !prev)} />
-              <Box component="main" flex={1} overflow="auto" p={3} bgcolor="background.default">
+              <Box
+                component="main"
+                sx={{ flex: 1, overflow: 'auto', p: 3, bgcolor: 'background.default' }}
+              >
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/settings" element={<SettingsForm />} />

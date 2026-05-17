@@ -16,12 +16,12 @@ const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode }) => {
       sx={{ borderBottom: 1, borderColor: 'divider' }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Typography variant="h6" fontWeight={600}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Invoicing App
           </Typography>
         </Box>
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ThemeSwitcher darkMode={darkMode} onToggle={onToggleDarkMode} />
         </Box>
       </Toolbar>

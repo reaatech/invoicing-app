@@ -30,7 +30,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
           );
         }
         return (
-          <Typography key={`${item.label}-${index}`} color="text.primary" fontWeight={600}>
+          <Typography key={`${item.label}-${index}`} color="text.primary" sx={{ fontWeight: 600 }}>
             {item.label}
           </Typography>
         );

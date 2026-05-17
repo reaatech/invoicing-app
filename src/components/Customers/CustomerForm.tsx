@@ -133,7 +133,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onClose }) => {
       <DialogTitle>{customer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="Customer Name"
               name="name"

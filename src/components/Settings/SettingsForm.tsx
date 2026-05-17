@@ -170,7 +170,9 @@ const SettingsForm: React.FC = () => {
   if (isLoading) {
     return (
       <Paper sx={{ p: 3 }}>
-        <Box display="flex" alignItems="center" justifyContent="center" py={6} gap={2}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 6, gap: 2 }}
+        >
           <CircularProgress size={28} />
           <Typography color="text.secondary">Loading settings...</Typography>
         </Box>
@@ -180,18 +182,20 @@ const SettingsForm: React.FC = () => {
 
   return (
     <Paper sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight={600} mb={3}>
+      <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
         Settings
       </Typography>
       <Box component="form" onSubmit={handleSubmit}>
-        <Typography variant="h6" fontWeight={600} mb={2} color="text.secondary">
+        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600, mb: 2 }}>
           Company Information
         </Typography>
         <Box
-          display="grid"
-          gap={2}
-          mb={2}
-          gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+          sx={{
+            display: 'grid',
+            gap: 2,
+            mb: 2,
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+          }}
         >
           <Box>
             <TextField
@@ -222,7 +226,7 @@ const SettingsForm: React.FC = () => {
               fullWidth
             />
           </Box>
-          <Box gridColumn={{ md: '1 / -1' }}>
+          <Box sx={{ gridColumn: { md: '1 / -1' } }}>
             <TextField
               label="Address"
               name="companyAddress"
@@ -233,18 +237,17 @@ const SettingsForm: React.FC = () => {
               fullWidth
             />
           </Box>
-          <Box gridColumn={{ md: '1 / -1' }}>
+          <Box sx={{ gridColumn: { md: '1 / -1' } }}>
             <TextField
               label="Company Logo"
               name="logo_upload"
               type="file"
               onChange={handleLogoUpload}
               fullWidth
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ accept: 'image/*' }}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { accept: 'image/*' } }}
             />
             {logoBase64 && (
-              <Box mt={2}>
+              <Box sx={{ mt: 2 }}>
                 <Box
                   component="img"
                   src={logoBase64}
@@ -256,14 +259,16 @@ const SettingsForm: React.FC = () => {
           </Box>
         </Box>
 
-        <Typography variant="h6" fontWeight={600} mb={2} color="text.secondary">
+        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600, mb: 2 }}>
           Invoice Settings
         </Typography>
         <Box
-          display="grid"
-          gap={2}
-          mb={2}
-          gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+          sx={{
+            display: 'grid',
+            gap: 2,
+            mb: 2,
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+          }}
         >
           <Box>
             <TextField
@@ -286,14 +291,16 @@ const SettingsForm: React.FC = () => {
           </Box>
         </Box>
 
-        <Typography variant="h6" fontWeight={600} mb={2} color="text.secondary">
+        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600, mb: 2 }}>
           SMTP Configuration
         </Typography>
         <Box
-          display="grid"
-          gap={2}
-          mb={2}
-          gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, 1fr)' }}
+          sx={{
+            display: 'grid',
+            gap: 2,
+            mb: 2,
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+          }}
         >
           <Box>
             <TextField
@@ -333,7 +340,7 @@ const SettingsForm: React.FC = () => {
               fullWidth
             />
           </Box>
-          <Box gridColumn={{ md: '1 / -1' }}>
+          <Box sx={{ gridColumn: { md: '1 / -1' } }}>
             <FormControlLabel
               control={<Switch checked={smtpSecure} onChange={handleChange} name="smtpSecure" />}
               label="Use Secure Connection (TLS/SSL)"
@@ -341,7 +348,9 @@ const SettingsForm: React.FC = () => {
           </Box>
         </Box>
 
-        <Box mt={3} display="flex" justifyContent="flex-end" alignItems="center" gap={2}>
+        <Box
+          sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2 }}
+        >
           {isDirty && (
             <Typography variant="body2" color="text.secondary">
               Unsaved changes
