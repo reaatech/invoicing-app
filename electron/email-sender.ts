@@ -179,11 +179,7 @@ export const registerInvoiceSend = () => {
           'Puppeteer launch',
         );
         const page = await withTimeout<Page>(browser.newPage(), 8000, 'Puppeteer new page');
-        await withTimeout(
-          page.setContent(html, { waitUntil: 'networkidle0' }),
-          10000,
-          'Puppeteer render',
-        );
+        await withTimeout(page.setContent(html, { waitUntil: 'load' }), 10000, 'Puppeteer render');
         await withTimeout(
           page.pdf({ path: outputPath, format: 'A4', printBackground: true }),
           10000,
