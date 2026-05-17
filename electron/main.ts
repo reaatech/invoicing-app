@@ -136,7 +136,7 @@ ipcMain.on('generate-pdf', async (event, invoiceData, outputPath) => {
     console.log('[PDF Generate] Launching puppeteer');
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load' });
     console.log('[PDF Generate] Generating PDF to', outputPath);
     await page.pdf({ path: outputPath, format: 'A4', printBackground: true });
     await browser.close();
