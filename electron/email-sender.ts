@@ -11,7 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const getPuppeteerLaunchOptions = async () => {
-  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await puppeteer.executablePath();
+  const executablePath =
+    process.env.PUPPETEER_EXECUTABLE_PATH || (await puppeteer.executablePath());
   if (!executablePath) {
     throw new Error('Puppeteer executable not found. Set PUPPETEER_EXECUTABLE_PATH.');
   }
