@@ -10,8 +10,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const getPuppeteerLaunchOptions = () => {
-  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
+const getPuppeteerLaunchOptions = async () => {
+  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await puppeteer.executablePath();
   if (!executablePath) {
     throw new Error('Puppeteer executable not found. Set PUPPETEER_EXECUTABLE_PATH.');
   }
@@ -174,7 +174,7 @@ export const registerInvoiceSend = () => {
       let browser: Browser | null = null;
       try {
         browser = await withTimeout(
-          puppeteer.launch(getPuppeteerLaunchOptions()),
+          puppeteer.launch(await getPuppeteerLaunchOptions()),
           15000,
           'Puppeteer launch',
         );
