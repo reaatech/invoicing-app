@@ -31,7 +31,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.12.0",
     "mustache": "^4.2.0",
-    "nodemailer": "^9.0.0",
+    "nodemailer": "^9.0.1",
     "puppeteer": "^25.0.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -69,5 +69,19 @@
     "typescript-eslint": "^8.59.4",
     "vite": "^8.0.16",
     "vitest": "^4.1.7"
+  },
+  "overrides": {
+    "form-data": "4.0.6",
+    "undici": "7.28.0",
+    "node-gyp": {
+      "undici": "6.27.0"
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "form-data": "4.0.6",
+      "undici@>=6.0.0 <7.0.0": "6.27.0",
+      "undici@>=7.0.0 <7.28.0": "7.28.0"
+    }
   }
 }
